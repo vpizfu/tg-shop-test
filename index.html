@@ -15,35 +15,33 @@
         tg.ready(); tg.expand();
         
         const products = [
-            {id:1, name:'iPhone 15 Pro', price:1200, img:'https://via.placeholder.com/300x200/007AFF/FFFFFF?text=iPhone+15+Pro'},
-            {id:2, name:'iPhone 15', price:900, img:'https://via.placeholder.com/300x200/FF3B30/FFFFFF?text=iPhone+15'},
-            {id:3, name:'iPad Air 5', price:700, img:'https://via.placeholder.com/300x200/34C759/FFFFFF?text=iPad+Air'},
-            {id:4, name:'iPad Pro M2', price:1100, img:'https://via.placeholder.com/300x200/AF52DE/FFFFFF?text=iPad+Pro'},
-            {id:5, name:'MacBook Air', price:1300, img:'https://via.placeholder.com/300x200/FFD60A/000000?text=MacBook+Air'},
-            {id:6, name:'AirPods Pro 2', price:280, img:'https://via.placeholder.com/300x200/30D158/FFFFFF?text=AirPods+Pro'}
+            {id:1, name:'iPhone 15 Pro', price:1200, img:'https://via.placeholder.com/150x150/007AFF/FFFFFF?text=iPhone+15+Pro'},
+            {id:2, name:'iPhone 15', price:900, img:'https://via.placeholder.com/150x150/FF3B30/FFFFFF?text=iPhone+15'},
+            {id:3, name:'iPad Air 5', price:700, img:'https://via.placeholder.com/150x150/34C759/FFFFFF?text=iPad+Air'},
+            {id:4, name:'iPad Pro M2', price:1100, img:'https://via.placeholder.com/150x150/AF52DE/FFFFFF?text=iPad+Pro'},
+            {id:5, name:'MacBook Air', price:1300, img:'https://via.placeholder.com/150x150/FFD60A/000000?text=MacBook'},
+            {id:6, name:'AirPods Pro 2', price:280, img:'https://via.placeholder.com/150x150/30D158/FFFFFF?text=AirPods'}
         ];
 
         const root = document.getElementById('root');
         root.innerHTML = `
-            <div class="mb-6">
-                <h1 class="text-3xl font-bold text-center mb-4">🛒 Магазин Техники</h1>
-                <p class="text-center text-gray-600">iPhone, iPad, MacBook и аксессуары</p>
+            <div class="mb-8">
+                <h1 class="text-3xl font-bold text-center mb-2">🛒 Магазин</h1>
+                <p class="text-center text-gray-600 text-lg">iPhone, iPad, MacBook</p>
             </div>
-            <div id="products-list" class="space-y-3">
+            <div class="grid grid-cols-2 gap-4">
                 ${products.map(product => `
-                    <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all">
-                        <div class="flex gap-3">
-                            <img src="${product.img}" class="w-24 h-24 rounded-xl object-cover flex-shrink-0">
-                            <div class="flex-1 min-w-0">
-                                <h3 class="font-bold text-lg mb-1">${product.name}</h3>
-                                <p class="text-2xl font-black text-blue-600 mb-3">$${product.price}</p>
-                                <div class="flex gap-2">
-                                    <button onclick="addToCart(${product.id})" 
-                                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-xl text-center transition-all">
-                                        🛒 В корзину
-                                    </button>
-                                </div>
-                            </div>
+                    <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group" onclick="addToCart(${product.id})">
+                        <div class="text-center mb-3">
+                            <img src="${product.img}" class="w-full h-32 rounded-xl object-cover mx-auto mb-3 group-hover:scale-105 transition-transform">
+                            <h3 class="font-bold text-lg mb-2 truncate">${product.name}</h3>
+                            <p class="text-2xl font-black text-blue-600 mb-4">$${product.price}</p>
+                        </div>
+                        <div class="flex items-center justify-center p-3 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-all">
+                            <svg class="w-8 h-8 text-blue-500 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 3.5A2 2 0 005.5 19V9a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H7.5a2 2 0 01-1.5-1zM16 17a1 1 0 11-2 0 1 1 0 012 0z"/>
+                            </svg>
+                            <span class="ml-2 font-bold text-blue-600 text-sm">В корзину</span>
                         </div>
                     </div>
                 `).join('')}
@@ -52,7 +50,8 @@
 
         function addToCart(id) {
             tg.HapticFeedback.impactOccurred('medium');
-            tg.showAlert(`Добавлен ${products.find(p => p.id === id).name}`);
+            const product = products.find(p => p.id === id);
+            tg.showAlert(`✅ ${product.name} добавлен в корзину!`);
             tg.MainButton.setText('Корзина (1)').show();
         }
     </script>
