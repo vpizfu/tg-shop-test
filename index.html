@@ -3,14 +3,61 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Магазин Техники</title>
+    <title>Hello World</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>body{font-family:system-ui}</style>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+            margin: 0;
+            padding: 20px;
+            text-align: center;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        h1 { font-size: 2.5em; margin-bottom: 10px; }
+        p { font-size: 1.2em; opacity: 0.8; }
+        button {
+            background: var(--tg-theme-button-color, #0088cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+    </style>
 </head>
-<body class="bg-gray-100">
-    <div id="root" class="min-h-screen p-4 max-w-md mx-auto"></div>
-    <script src="app.js"></script>
+<body>
+    <h1>🌟 Hello World!</h1>
+    <p>Это ваше первое Telegram Mini App!</p>
+    <p id="user-info">Загрузка...</p>
+    <button onclick="window.Telegram.WebApp.close()">Закрыть</button>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        
+        // Инициализация
+        tg.ready();
+        tg.expand();
+
+        // Показать информацию о пользователе
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+            document.getElementById('user-info').textContent = 
+                `Привет, ${user.first_name || 'Пользователь'}! 👋`;
+        } else {
+            document.getElementById('user-info').textContent = 'Готово к работе!';
+        }
+
+        console.log('Mini App готов!');
+    </script>
 </body>
 </html>
 
