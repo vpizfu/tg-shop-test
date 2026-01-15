@@ -3,60 +3,58 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hello World</title>
+    <title>Магазин Техники</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: var(--tg-theme-bg-color, #ffffff);
-            color: var(--tg-theme-text-color, #000000);
-            margin: 0;
-            padding: 20px;
-            text-align: center;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-        h1 { font-size: 2.5em; margin-bottom: 10px; }
-        p { font-size: 1.2em; opacity: 0.8; }
-        button {
-            background: var(--tg-theme-button-color, #0088cc);
-            color: var(--tg-theme-button-text-color, #ffffff);
-            border: none;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 500;
-            cursor: pointer;
-            margin-top: 20px;
-        }
-    </style>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>body{font-family:system-ui,-apple-system}</style>
 </head>
-<body>
-    <h1>🌟 Hello World!</h1>
-    <p>Это ваше первое Telegram Mini App!</p>
-    <p id="user-info">Загрузка...</p>
-    <button onclick="window.Telegram.WebApp.close()">Закрыть</button>
-
+<body class="bg-gray-100 min-h-screen">
+    <div id="root" class="p-4 max-w-md mx-auto"></div>
     <script>
         const tg = window.Telegram.WebApp;
+        tg.ready(); tg.expand();
         
-        // Инициализация
-        tg.ready();
-        tg.expand();
+        const products = [
+            {id:1, name:'iPhone 15 Pro', price:1200, img:'https://via.placeholder.com/300x200/007AFF/FFFFFF?text=iPhone+15+Pro'},
+            {id:2, name:'iPhone 15', price:900, img:'https://via.placeholder.com/300x200/FF3B30/FFFFFF?text=iPhone+15'},
+            {id:3, name:'iPad Air 5', price:700, img:'https://via.placeholder.com/300x200/34C759/FFFFFF?text=iPad+Air'},
+            {id:4, name:'iPad Pro M2', price:1100, img:'https://via.placeholder.com/300x200/AF52DE/FFFFFF?text=iPad+Pro'},
+            {id:5, name:'MacBook Air', price:1300, img:'https://via.placeholder.com/300x200/FFD60A/000000?text=MacBook+Air'},
+            {id:6, name:'AirPods Pro 2', price:280, img:'https://via.placeholder.com/300x200/30D158/FFFFFF?text=AirPods+Pro'}
+        ];
 
-        // Показать информацию о пользователе
-        const user = tg.initDataUnsafe?.user;
-        if (user) {
-            document.getElementById('user-info').textContent = 
-                `Привет, ${user.first_name || 'Пользователь'}! 👋`;
-        } else {
-            document.getElementById('user-info').textContent = 'Готово к работе!';
+        const root = document.getElementById('root');
+        root.innerHTML = `
+            <div class="mb-6">
+                <h1 class="text-3xl font-bold text-center mb-4">🛒 Магазин Техники</h1>
+                <p class="text-center text-gray-600">iPhone, iPad, MacBook и аксессуары</p>
+            </div>
+            <div id="products-list" class="space-y-3">
+                ${products.map(product => `
+                    <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-xl transition-all">
+                        <div class="flex gap-3">
+                            <img src="${product.img}" class="w-24 h-24 rounded-xl object-cover flex-shrink-0">
+                            <div class="flex-1 min-w-0">
+                                <h3 class="font-bold text-lg mb-1">${product.name}</h3>
+                                <p class="text-2xl font-black text-blue-600 mb-3">$${product.price}</p>
+                                <div class="flex gap-2">
+                                    <button onclick="addToCart(${product.id})" 
+                                            class="flex-1 bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-xl text-center transition-all">
+                                        🛒 В корзину
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+
+        function addToCart(id) {
+            tg.HapticFeedback.impactOccurred('medium');
+            tg.showAlert(`Добавлен ${products.find(p => p.id === id).name}`);
+            tg.MainButton.setText('Корзина (1)').show();
         }
-
-        console.log('Mini App готов!');
     </script>
 </body>
 </html>
