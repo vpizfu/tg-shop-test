@@ -30,37 +30,30 @@
 
     // ====== 20 ТОВАРОВ ======
     const products = [
-      // iPhone (7 товаров)
       {id:1, name:'iPhone 15 Pro Max 256GB', price:1400, img:'https://images.unsplash.com/photo-1691113485254-72a612c2d8ab?w=300&h=300&fit=crop', cat:'iPhone'},
       {id:2, name:'iPhone 15 Pro 128GB', price:1200, img:'https://images.unsplash.com/photo-1691113484676-7ab5010a5a4c?w=300&h=300&fit=crop', cat:'iPhone'},
       {id:3, name:'iPhone 15 128GB', price:900, img:'https://images.unsplash.com/photo-1693622503037-0a9a5f6f9b3e?w=300&h=300&fit=crop', cat:'iPhone'},
       {id:4, name:'iPhone 14 Pro Max', price:1100, img:'https://images.unsplash.com/photo-1673346009500-0cb12d234c1f?w=300&h=300&fit=crop', cat:'iPhone'},
       {id:5, name:'iPhone 14 128GB', price:750, img:'https://images.unsplash.com/photo-1646725106931-d3516b65a3a1?w=300&h=300&fit=crop', cat:'iPhone'},
       {id:6, name:'iPhone 15 Plus', price:1000, img:'https://images.unsplash.com/photo-1691113478371-4a8f9e7d8a8e?w=300&h=300&fit=crop', cat:'iPhone'},
+      {id:7, name:'iPhone 15 Pro Max 1TB', price:1700, img:'https://images.unsplash.com/photo-1691113485254-72a612c2d8ab?w=300&h=300&fit=crop', cat:'iPhone'},
       
-      // iPad (4 товара)
-      {id:7, name:'iPad Pro 13" M4', price:1300, img:'https://images.unsplash.com/photo-1583354355313-1cd0b3f6680f?w=300&h=300&fit=crop', cat:'iPad'},
-      {id:8, name:'iPad Air 11"', price:700, img:'https://images.unsplash.com/photo-1561154464-82e9adf32761?w=300&h=300&fit=crop', cat:'iPad'},
-      {id:9, name:'iPad 10th Gen', price:450, img:'https://images.unsplash.com/photo-1632661676792-213d7abef1e3?w=300&h=300&fit=crop', cat:'iPad'},
+      {id:8, name:'iPad Pro 13" M4', price:1300, img:'https://images.unsplash.com/photo-1583354355313-1cd0b3f6680f?w=300&h=300&fit=crop', cat:'iPad'},
+      {id:9, name:'iPad Air 11"', price:700, img:'https://images.unsplash.com/photo-1561154464-82e9adf32761?w=300&h=300&fit=crop', cat:'iPad'},
+      {id:10, name:'iPad 10th Gen', price:450, img:'https://images.unsplash.com/photo-1632661676792-213d7abef1e3?w=300&h=300&fit=crop', cat:'iPad'},
+      {id:11, name:'iPad Pro 11"', price:1100, img:'https://images.unsplash.com/photo-1583354355313-1cd0b3f6680f?w=300&h=300&fit=crop', cat:'iPad'},
       
-      // MacBook (3 товара)
-      {id:10, name:'MacBook Air 13" M3', price:1300, img:'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop', cat:'MacBook'},
-      {id:11, name:'MacBook Pro 14" M3', price:2000, img:'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=300&h=300&fit=crop', cat:'MacBook'},
+      {id:12, name:'MacBook Air 13" M3', price:1300, img:'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop', cat:'MacBook'},
+      {id:13, name:'MacBook Pro 14" M3', price:2000, img:'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=300&h=300&fit=crop', cat:'MacBook'},
+      {id:14, name:'MacBook Air 15"', price:1500, img:'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop', cat:'MacBook'},
       
-      // Apple Watch (3 товара)
-      {id:12, name:'Apple Watch Ultra 2', price:850, img:'https://images.unsplash.com/photo-1579586140626-2882d73086ec?w=300&h=300&fit=crop', cat:'Apple Watch'},
-      {id:13, name:'Apple Watch Series 10', price:450, img:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=300&fit=crop', cat:'Apple Watch'},
-      {id:14, name:'Apple Watch SE', price:280, img:'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=300&h=300&fit=crop', cat:'Apple Watch'},
+      {id:15, name:'Apple Watch Ultra 2', price:850, img:'https://images.unsplash.com/photo-1579586140626-2882d73086ec?w=300&h=300&fit=crop', cat:'Apple Watch'},
+      {id:16, name:'Apple Watch Series 10', price:450, img:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=300&fit=crop', cat:'Apple Watch'},
+      {id:17, name:'Apple Watch SE', price:280, img:'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=300&h=300&fit=crop', cat:'Apple Watch'},
+      {id:18, name:'Apple Watch Hermès', price:1200, img:'https://images.unsplash.com/photo-1579586140626-2882d73086ec?w=300&h=300&fit=crop', cat:'Apple Watch'},
       
-      // AirPods (3 товара)
-      {id:15, name:'AirPods Pro 2 USB-C', price:280, img:'https://images.unsplash.com/photo-1584822172844-3dd80ee2ed17?w=300&h=300&fit=crop', cat:'AirPods'},
-      {id:16, name:'AirPods 4 ANC', price:180, img:'https://images.unsplash.com/photo-1610945262588-5e9e9fa7b67f?w=300&h=300&fit=crop', cat:'AirPods'},
-      
-      // Дополнительные
-      {id:17, name:'iPhone 15 Pro Max 1TB', price:1700, img:'https://images.unsplash.com/photo-1691113485254-72a612c2d8ab?w=300&h=300&fit=crop', cat:'iPhone'},
-      {id:18, name:'iPad Pro 11"', price:1100, img:'https://images.unsplash.com/photo-1583354355313-1cd0b3f6680f?w=300&h=300&fit=crop', cat:'iPad'},
-      {id:19, name:'MacBook Air 15"', price:1500, img:'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop', cat:'MacBook'},
-      {id:20, name:'Apple Watch Hermès', price:1200, img:'https://images.unsplash.com/photo-1579586140626-2882d73086ec?w=300&h=300&fit=crop', cat:'Apple Watch'}
+      {id:19, name:'AirPods Pro 2 USB-C', price:280, img:'https://images.unsplash.com/photo-1584822172844-3dd80ee2ed17?w=300&h=300&fit=crop', cat:'AirPods'},
+      {id:20, name:'AirPods 4 ANC', price:180, img:'https://images.unsplash.com/photo-1610945262588-5e9e9fa7b67f?w=300&h=300&fit=crop', cat:'AirPods'}
     ];
 
     const CATEGORIES = ['Все', 'iPhone', 'iPad', 'MacBook', 'Apple Watch', 'AirPods'];
@@ -104,82 +97,90 @@
             <div class="text-xs text-gray-500">
               Показано: <span class="font-semibold">${showCount}</span> из ${list.length}
             </div>
-            ${loadedCount < list.length ? 
-              `<button id="loadMore" class="text-sm font-semibold px-4 py-2 rounded-xl bg-blue-500 text-white shadow-lg">Показать ещё</button>` : 
-              `<div class="text-xs text-gray-500">Все товары загружены</div>`
-            }
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-4" id="productGrid">
+        <div class="grid grid-cols-2 gap-4 pb-20" id="productGrid">
           ${list.slice(0, showCount).map(p => productCard(p)).join('')}
         </div>
       `;
 
       setupHandlers();
       loadImages(list.slice(0, showCount));
+      
+      // 🔄 Бесконечная прокрутка
+      setTimeout(setupInfiniteScroll, 100);
     }
 
-    // ====== КАРТОЧКА ТОВАРА ======
+    // ====== КАРТОЧКА ТОВАРА (ТОЛЬКО ИКОНКА КОРЗИНЫ) ======
     function productCard(product) {
       const placeholder = PLACEHOLDERS[product.cat] || 'https://via.placeholder.com/300x300/ddd/999?text=?';
       return `
-        <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group cursor-pointer" 
+        <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group cursor-pointer relative" 
              onclick="addToCart(${product.id})" data-product-id="${product.id}">
+          
+          <!-- ИЗОБРАЖЕНИЕ -->
           <div class="w-full h-32 rounded-xl mb-3 group-hover:scale-105 transition-transform placeholder-shimmer bg-gray-200 flex items-center justify-center relative overflow-hidden">
             <img src="${placeholder}" class="w-full h-32 rounded-xl object-cover absolute inset-0 opacity-0" 
                  data-src="${product.img}" data-product-id="${product.id}" />
           </div>
+          
+          <!-- НАЗВАНИЕ -->
           <div class="font-bold text-base mb-1 truncate">${escapeHtml(product.name)}</div>
-          <div class="text-blue-600 font-black text-xl mb-3">$${product.price}</div>
-          <div class="flex justify-center">
-            <div class="p-3 bg-blue-50 rounded-xl group-hover:bg-blue-100 transition-all">
-              <svg class="w-7 h-7 text-blue-600 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 3.5A2 2 0 005.5 19V9a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H7.5a2 2 0 01-1.5-1zM16 17a1 1 0 11-2 0 1 1 0 012 0z"/>
-              </svg>
-            </div>
+          
+          <!-- ЦЕНА -->
+          <div class="text-blue-600 font-black text-xl mb-4">$${product.price}</div>
+          
+          <!-- 🛒 ТОЛЬКО ИКОНКА КОРЗИНЫ (СПРАВА НИЖЕ) -->
+          <div class="absolute bottom-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg group-hover:scale-110 transition-all">
+            <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" 
+                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
           </div>
         </div>
       `;
     }
 
+    // ====== БЕСКОНЕЧНАЯ ПРОКРУТКА ======
+    function setupInfiniteScroll() {
+      const grid = document.getElementById('productGrid');
+      if (!grid) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const list = getVisibleProducts();
+            if (loadedCount < list.length) {
+              loadedCount += 10;
+              render();
+              tg?.HapticFeedback?.impactOccurred('light');
+            }
+          }
+        });
+      }, { threshold: 0.1 });
+
+      // Наблюдаем за последней карточкой
+      const lastCard = grid.lastElementChild;
+      if (lastCard) observer.observe(lastCard);
+    }
+
     // ====== ОБРАБОТЧИКИ ======
     function setupHandlers() {
-      document.getElementById('category').addEventListener('change', (e) => {
+      document.getElementById('category')?.addEventListener('change', (e) => {
         selectedCategory = e.target.value;
         loadedCount = 10;
         if (selectedCategory === 'Все') randomIds = pickRandomIds(products, 20);
         render();
       });
 
-      document.getElementById('search').addEventListener('input', (e) => {
+      document.getElementById('search')?.addEventListener('input', (e) => {
         query = e.target.value || '';
         loadedCount = 10;
         render();
       });
-
-      const loadMoreBtn = document.getElementById('loadMore');
-      if (loadMoreBtn) {
-        loadMoreBtn.addEventListener('click', () => {
-          loadedCount += 10;
-          tg?.HapticFeedback?.impactOccurred('light');
-          render();
-        });
-      }
     }
 
-    // ====== ЛОГИКА ПОДГРУЗКИ ======
-    function getVisibleProducts() {
-      let base = selectedCategory === 'Все' ? 
-        products.filter(p => randomIds.includes(p.id)) : 
-        products.filter(p => p.cat === selectedCategory);
-      
-      if (query.trim()) {
-        const q = query.trim().toLowerCase();
-        base = base.filter(p => p.name.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q));
-      }
-      return base;
-    }
-
+    // ====== ИЗОБРАЖЕНИЯ ======
     async function loadImages(products) {
       products.forEach(product => {
         const imgElement = document.querySelector(`img[data-product-id="${product.id}"]`);
@@ -217,7 +218,19 @@
       } catch(e) {}
     }
 
-    // ====== HELPERS ======
+    // ====== ЛОГИКА ======
+    function getVisibleProducts() {
+      let base = selectedCategory === 'Все' ? 
+        products.filter(p => randomIds.includes(p.id)) : 
+        products.filter(p => p.cat === selectedCategory);
+      
+      if (query.trim()) {
+        const q = query.trim().toLowerCase();
+        base = base.filter(p => p.name.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q));
+      }
+      return base;
+    }
+
     function pickRandomIds(items, count) {
       const ids = items.map(x => x.id);
       for (let i = ids.length - 1; i > 0; i--) {
@@ -236,6 +249,7 @@
       const product = products.find(p => p.id === id);
       tg?.HapticFeedback?.impactOccurred('medium');
       tg?.showAlert?.(`✅ ${product.name}`);
+      tg?.MainButton?.setText('Корзина (1)')?.show();
     }
     window.addToCart = addToCart;
 
