@@ -37,27 +37,23 @@
       padding-bottom: 5rem;
     }
 
-    /* 🔥 Карусель изображений - ФИКС ОБРЕЗКИ */
+    /* 🔥 Карусель изображений */
     .image-carousel {
       position: relative;
       overflow: hidden;
       height: 128px;
       border-radius: 12px;
-      background: #f8fafc;
     }
     .image-carousel-inner {
       display: flex;
       transition: transform 0.3s ease;
       height: 100%;
-      width: max-content;
     }
     .carousel-img {
-      width: 128px;
-      height: 128px;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
-      object-position: center;
       flex-shrink: 0;
-      border-radius: 12px;
     }
 
     /* 🔥 Кнопки навигации */
@@ -115,18 +111,49 @@
     .scroll-carousel::-webkit-scrollbar { display: none; }
     .scroll-item { scroll-snap-align: start; flex-shrink: 0; }
 
-    /* 🔥 Модальная карусель - ФИКС РАЗМЕРОВ */
+    /* 🔥 НЕКЛИКАБЕЛЬНЫЕ опции */
+    .option-unavailable {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+    .option-btn.unavailable {
+      background: #f3f4f6 !important;
+      border-color: #d1d5db !important;
+      color: #9ca3af !important;
+    }
+
+    /* 🔥 Модальная карусель */
     #modalCarousel {
-      height: 280px !important;
+      height: 260px !important;
       margin: 12px 0;
       border-radius: 24px;
       position: relative;
-      background: #f8fafc;
+      cursor: pointer;
     }
     #modalCarousel .carousel-img { 
-      width: 280px; 
-      height: 280px; 
-      border-radius: 24px; 
+      border-radius: 24px;
+      cursor: pointer;
+    }
+
+    /* 🔥 Полноэкранный режим */
+    #fullscreenModal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    #fullscreenImage {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 12px;
     }
 
     .modal-image-section {
@@ -151,58 +178,32 @@
       margin-bottom: 12px;
     }
 
-    /* 🔥 СТАТУС ОПЦИЙ - НОВЫЕ СТИЛИ */
-    .option-section {
-      transition: all 0.3s ease;
-    }
-    .option-section.locked {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-    .option-section.unlocked {
-      opacity: 1;
-      pointer-events: auto;
-    }
-    .option-section.active {
-      transform: translateY(-2px);
-    }
-
-    .option-btn {
-      transition: all 0.2s ease;
-      position: relative;
-    }
-    .option-btn.locked {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-    .option-btn.unlocked {
-      cursor: pointer;
-    }
-
     /* 🔥 Поиск - курсор и текст видны */
     #search { color: #111827; }
     #search::placeholder { color: #9ca3af; }
 
-    /* 🔥 Анти-прыжки фокуса */
+    /* 🔥 Анти-прыжки фокуса в модалке */
     .option-btn, .option-btn:focus {
       outline: none !important;
       -webkit-tap-highlight-color: transparent;
-    }
-
-    .progress-bar {
-      height: 3px;
-      background: linear-gradient(to right, #3B82F6 var(--progress, 0%), #e5e7eb var(--progress, 0%));
-      border-radius: 2px;
-      transition: all 0.3s ease;
-      margin-bottom: 12px;
     }
   </style>
 </head>
 
 <body class="bg-gray-100 min-h-screen">
   <div id="root" class="p-4 max-w-md mx-auto"></div>
+  
+  <!-- 🔥 Основная модалка -->
   <div id="productModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div id="modalContent" class="bg-white rounded-3xl shadow-2xl max-h-[90vh] w-full max-w-md overflow-hidden"></div>
+  </div>
+
+  <!-- 🔥 Полноэкранная модалка для изображений -->
+  <div id="fullscreenModal" class="hidden">
+    <button onclick="closeFullscreen()" class="absolute top-4 right-4 z-10 w-12 h-12 bg-black/50 rounded-full flex items-center justify-center text-white text-2xl hover:bg-black/70 transition-all">
+      ×
+    </button>
+    <img id="fullscreenImage" src="" alt="Fullscreen image" />
   </div>
 
   <script>
@@ -240,13 +241,27 @@
       lastTouchEnd = now;
     }, { passive: false });
 
-    // 🔥 НОВЫЕ ФУНКЦИИ ДЛЯ КОНКРЕТНЫХ ИЗОБРАЖЕНИЙ
     function getProductVariants(productName) {
       return productsData.filter(p => p.name === productName);
     }
 
-    function getVariantImages(variant) {
-      return Array.isArray(variant.images) ? variant.images.filter(img => img && img.trim()) : [];
+    // 🔥 Функция получает изображения ТОЛЬКО для текущей выбранной конфигурации
+    function getCurrentVariantImages() {
+      const variants = getProductVariants(currentProduct.name);
+      const filteredVariants = getFilteredVariants(variants);
+      
+      if (filteredVariants.length === 0) return [];
+      
+      // Берем изображения из всех подходящих вариантов (на случай если у некоторых нет фото)
+      const allImages = new Set();
+      filteredVariants.forEach(variant => {
+        if (variant.images && Array.isArray(variant.images) && variant.images.length > 0) {
+          variant.images.forEach(img => {
+            if (img && img.trim()) allImages.add(img);
+          });
+        }
+      });
+      return Array.from(allImages);
     }
 
     function getFilteredVariants(variants) {
@@ -258,20 +273,34 @@
       });
     }
 
+    // 🔥 Проверяет доступность опции на основе предыдущих выборов
+    function isOptionAvailable(type, option, variants) {
+      const typeIndex = FILTER_ORDER.indexOf(type);
+      if (typeIndex === 0) return true; // Первая опция всегда доступна
+      
+      // Проверяем, есть ли варианты с этой опцией при текущих предыдущих выборах
+      const prevSelected = {};
+      for (let i = 0; i < typeIndex; i++) {
+        const prevType = FILTER_ORDER[i];
+        if (selectedOption[prevType]) {
+          prevSelected[prevType] = selectedOption[prevType];
+        }
+      }
+      
+      const testVariants = variants.filter(variant => {
+        // Проверяем предыдущие выборы
+        return Object.entries(prevSelected).every(([t, val]) => variant[t] === val) &&
+               // И текущую опцию
+               variant[type] === option;
+      });
+      
+      return testVariants.length > 0;
+    }
+
     function getAvailableOptions(type, variants) {
       const filteredVariants = getFilteredVariants(variants);
       const options = [...new Set(filteredVariants.map(v => v[type]).filter(Boolean))];
       return options.sort();
-    }
-
-    function getCurrentStep() {
-      return FILTER_ORDER.findIndex(type => !selectedOption[type]);
-    }
-
-    function isOptionUnlocked(type) {
-      const step = getCurrentStep();
-      const typeIndex = FILTER_ORDER.indexOf(type);
-      return step <= typeIndex;
     }
 
     function isCompleteSelection() {
@@ -393,18 +422,22 @@
       setupImageCarousels();
     }
 
-    // 🔥 ФУНКЦИЯ ПОШАГОВОГО ВЫБОРА БЕЗ ПРЫЖКОВ ФОКУСА
+    // 🔥 УЛУЧШЕННАЯ ФУНКЦИЯ ВЫБОРА ОПЦИЙ (последовательная)
     function selectOptionNoFocus(type, option) {
       document.activeElement?.blur();
       
       if (selectedOption[type] === option) {
-        // Отмена выбора
+        // Снимаем выбор и все последующие
         const typeIndex = FILTER_ORDER.indexOf(type);
-        for (let i = typeIndex; i < FILTER_ORDER.length; i++) delete selectedOption[FILTER_ORDER[i]];
+        for (let i = typeIndex; i < FILTER_ORDER.length; i++) {
+          delete selectedOption[FILTER_ORDER[i]];
+        }
       } else {
-        // Выбор опции
+        // Устанавливаем выбор и сбрасываем последующие
         const typeIndex = FILTER_ORDER.indexOf(type);
-        for (let i = typeIndex + 1; i < FILTER_ORDER.length; i++) delete selectedOption[FILTER_ORDER[i]];
+        for (let i = typeIndex + 1; i < FILTER_ORDER.length; i++) {
+          delete selectedOption[FILTER_ORDER[i]];
+        }
         selectedOption[type] = option;
       }
       
@@ -464,7 +497,11 @@
       const variants = getProductVariants(productName);
       const allImages = new Set();
       variants.forEach(variant => {
-        getVariantImages(variant).forEach(img => allImages.add(img));
+        if (variant.images && Array.isArray(variant.images) && variant.images.length > 0) {
+          variant.images.forEach(img => {
+            if (img && img.trim()) allImages.add(img);
+          });
+        }
       });
       return Array.from(allImages);
     }
@@ -491,7 +528,7 @@
         let currentIndex = 0;
 
         function updateCarousel() {
-          inner.style.transform = `translateX(-${currentIndex * 128}px)`;
+          inner.style.transform = `translateX(-${currentIndex * 100}%)`;
           dots.forEach((dot, idx) => dot.classList.toggle('active', idx === currentIndex));
           const nextImg = inner.querySelectorAll('.carousel-img')[currentIndex];
           if (nextImg && !nextImg.complete && nextImg.dataset.realSrc) {
@@ -580,12 +617,32 @@
       tg?.HapticFeedback?.impactOccurred('light');
     };
 
+    // 🔥 ОТКРЫВАНЕ ПОЛНОЭКРАННОЙ КАРТИНКИ
+    window.openFullscreenImage = (imageSrc, index, total) => {
+      document.getElementById('fullscreenImage').src = imageSrc;
+      document.getElementById('fullscreenModal').classList.remove('hidden');
+      tg?.expand();
+    };
+
+    // 🔥 ЗАКРЫТИЕ ПОЛНОЭКРАННОЙ КАРТИНКИ
+    window.closeFullscreen = () => {
+      document.getElementById('fullscreenModal').classList.add('hidden');
+      tg?.HapticFeedback?.impactOccurred('light');
+    };
+
+    // 🔥 Обработчик клика по модальной карусели
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('#modalCarousel') && e.target.tagName === 'IMG') {
+        const imgSrc = e.target.src;
+        openFullscreenImage(imgSrc, 0, 1);
+      }
+    });
+
     function renderProductModal(product) {
       currentProduct = product;
       const variants = getProductVariants(product.name);
       const filteredVariants = getFilteredVariants(variants);
-      const currentStep = getCurrentStep();
-      const progress = ((FILTER_ORDER.length - currentStep) / FILTER_ORDER.length) * 100;
+      const currentImages = getCurrentVariantImages();
 
       const availableOptions = {};
       FILTER_ORDER.forEach(type => { 
@@ -594,12 +651,6 @@
 
       const complete = isCompleteSelection();
       const finalVariant = filteredVariants.length === 1 ? filteredVariants[0] : null;
-      
-      // 🔥 ТОЛЬКО ИЗОБРАЖЕНИЯ КОНКРЕТНОГО ВАРИАНТА
-      let currentImages = [];
-      if (complete && finalVariant) {
-        currentImages = getVariantImages(finalVariant);
-      }
 
       document.getElementById('modalContent').innerHTML = `
         <div class="flex flex-col h-full max-h-[90vh]">
@@ -616,16 +667,14 @@
               <span>от $${Math.min(...variants.map(v => v.price))}</span>
               <span>• ${variants.length} вариантов</span>
             </div>
-            <div class="progress-bar" style="--progress: ${progress}%"></div>
-            <div class="text-xs text-gray-500">Шаг ${currentStep + 1} из ${FILTER_ORDER.length}</div>
           </div>
 
           <div class="flex-1 overflow-hidden">
             <div class="modal-image-section">
               <div class="h-64 bg-gray-100 relative mb-6 rounded-2xl overflow-hidden image-carousel" id="modalCarousel">
-                ${complete && currentImages.length > 0 ? `
+                ${currentImages.length > 0 ? `
                   <div class="image-carousel-inner" id="modalCarouselInner">
-                    ${currentImages.slice(0, 10).map(img => `<img src="${img}" class="carousel-img loaded" alt="Product image" />`).join('')}
+                    ${currentImages.slice(0, 10).map(img => `<img src="${img}" class="carousel-img loaded" alt="Product image" onclick="openFullscreenImage('${img}', 0, ${currentImages.length})" />`).join('')}
                   </div>
                   ${currentImages.length > 1 ? `
                     <button class="nav-btn nav-prev" onclick="modalPrevImage()">‹</button>
@@ -642,7 +691,7 @@
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
                     </svg>
-                    <div class="text-center text-sm font-medium">${complete ? 'Фото этой комплектации скоро появятся' : 'Выберите все параметры для просмотра фото'}</div>
+                    <div class="text-center text-sm font-medium">Выберите все параметры для просмотра фото</div>
                   </div>
                 `}
               </div>
@@ -650,31 +699,38 @@
           </div>
 
           <div class="p-6 space-y-4 overflow-y-auto max-h-80">
-            ${FILTER_ORDER.map((type, index) => {
-              const unlocked = isOptionUnlocked(type);
-              const sectionClass = unlocked ? 'option-section unlocked' : 'option-section locked';
-              const labelClass = complete ? 'active' : '';
+            ${FILTER_ORDER.map(type => {
+              const typeIndex = FILTER_ORDER.indexOf(type);
+              const prevSelectedCount = Object.keys(selectedOption).filter(k => FILTER_ORDER.indexOf(k) < typeIndex).length;
+              const isUnlocked = prevSelectedCount === typeIndex;
+              
               return `
-                <div class="${sectionClass}">
-                  <label class="text-sm font-semibold text-gray-700 capitalize mb-2 block ${labelClass}">${getLabel(type)}</label>
+                <div>
+                  <label class="text-sm font-semibold text-gray-700 capitalize mb-2 block flex items-center gap-2">
+                    ${getLabel(type)}
+                    ${!isUnlocked ? `<span class="text-xs text-gray-400">(заблокировано)</span>` : ''}
+                  </label>
                   <div class="flex gap-2 scroll-carousel pb-1">
                     ${availableOptions[type].map(option => {
-                      const btnClass = selectedOption[type] === option 
-                        ? 'bg-blue-500 text-white border-blue-500 shadow-md unlocked' 
-                        : unlocked 
-                          ? 'bg-gray-100 border-gray-300 hover:bg-gray-200 unlocked' 
-                          : 'bg-gray-200 border-gray-300 text-gray-400 locked';
+                      const available = isOptionAvailable(type, option, variants);
+                      const isSelected = selectedOption[type] === option;
                       return `
-                        <button class="option-btn ${btnClass} px-3 py-1.5 text-xs font-medium rounded-full border scroll-item w-[80px] transition-all"
+                        <button class="option-btn px-3 py-1.5 text-xs font-medium rounded-full border scroll-item w-[80px]
+                                ${isSelected ? 'bg-blue-500 text-white border-blue-500 shadow-md' : 
+                                  available ? 'bg-gray-100 border-gray-300 hover:bg-gray-200' : 
+                                  'option-unavailable unavailable bg-gray-100 border-gray-300'}
+                                transition-all ${!isUnlocked || !available ? 'pointer-events-none opacity-50' : ''}
+                                ${isUnlocked && available ? 'cursor-pointer hover:scale-105' : ''}
+                                ${isSelected ? 'ring-2 ring-blue-300 ring-offset-1' : ''}"
                                 data-type="${type}"
                                 data-option="${escapeHtml(option)}"
-                                ${!unlocked ? 'disabled' : ''}
-                                onclick="selectOptionNoFocus('${type}', '${escapeHtml(option)}'); return false;">
+                                ${isUnlocked && available ? `onclick="selectOptionNoFocus('${type}', '${escapeHtml(option)}'); return false;"` : 'disabled'}
+                                ${!isUnlocked || !available ? 'title="Сначала выберите предыдущие опции"' : ''}>
                           ${escapeHtml(option)}
                         </button>
                       `;
                     }).join('')}
-                    ${selectedOption[type] ? `<button onclick="clearOptionNoFocus('${type}'); return false;" class="px-3 py-1.5 text-xs text-red-500 font-medium rounded-full border border-red-200 hover:bg-red-50 scroll-item w-12 unlocked">✕</button>` : ''}
+                    ${selectedOption[type] ? `<button onclick="clearOptionNoFocus('${type}'); return false;" class="px-3 py-1.5 text-xs text-red-500 font-medium rounded-full border border-red-200 hover:bg-red-50 scroll-item w-12">✕</button>` : ''}
                   </div>
                   ${!availableOptions[type].length ? '<p class="text-xs text-gray-400 mt-1">Нет вариантов</p>' : ''}
                 </div>
@@ -685,8 +741,8 @@
               <div class="text-center text-sm text-gray-500 mb-4">
                 Доступно: <span id="variantCount" class="font-bold text-blue-600">${filteredVariants.length}</span> вариантов
                 ${complete && finalVariant ? `
-                  <div class="text-xs mt-1 bg-green-50 border border-green-200 rounded-xl p-2">
-                    ✅ Выбран: ${finalVariant.simType} | ${finalVariant.storage} | ${finalVariant.color} | ${finalVariant.region}
+                  <div class="text-xs mt-1 bg-blue-50 border border-blue-200 rounded-xl p-2">
+                    ✅ Выбран: ${finalVariant.storage} | ${finalVariant.color} | ${finalVariant.region}
                   </div>
                 ` : ''}
               </div>
@@ -700,11 +756,12 @@
         </div>
       `;
 
-      if (complete && currentImages.length > 0) {
+      if (currentImages.length > 0) {
         initModalCarousel(Math.min(currentImages.length, 10));
       }
     }
 
+    // 🔥 НОВЫЕ ФУНКЦИИ БЕЗ ПРЫЖКОВ ФОКУСА
     window.selectOptionNoFocus = selectOptionNoFocus;
 
     function clearOptionNoFocus(type) {
@@ -732,7 +789,7 @@
       if (!inner) return;
 
       function updateCarousel() {
-        inner.style.transform = `translateX(-${modalCurrentIndex * 280}px)`;
+        inner.style.transform = `translateX(-${modalCurrentIndex * 100}%)`;
         document.querySelectorAll('#modalDots .dot').forEach((dot, idx) => {
           dot.classList.toggle('active', idx === modalCurrentIndex);
         });
@@ -768,7 +825,7 @@
         return;
       }
       const selectedVariant = variants[0];
-      tg?.showAlert?.(`✅ ${selectedVariant.name}\n${selectedVariant.simType} | ${selectedVariant.storage} | ${selectedVariant.color} | ${selectedVariant.region}\n$${selectedVariant.price}`);
+      tg?.showAlert?.(`✅ ${selectedVariant.name}\n${selectedVariant.storage} | ${selectedVariant.color} | ${selectedVariant.region}\n$${selectedVariant.price}`);
       tg?.MainButton?.setText('Корзина (1)')?.show();
       closeModal();
     };
@@ -805,12 +862,19 @@
     }
 
     function escapeHtml(s) {
-      const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
+      const map = {'&':'&amp;','<':'&lt;>','>':'&gt;','"':'&quot;',"'":'&#39;'};
       return String(s).replace(/[&<>"']/g, m => map[m]);
     }
 
     modal?.addEventListener('click', (e) => {
       if (e.target === modal) closeModal();
+    });
+
+    // 🔥 Полноэкранная модалка
+    document.getElementById('fullscreenModal')?.addEventListener('click', (e) => {
+      if (e.target === document.getElementById('fullscreenModal')) {
+        closeFullscreen();
+      }
     });
 
     initApp();
