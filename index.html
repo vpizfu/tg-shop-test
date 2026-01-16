@@ -2,7 +2,7 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>Магазин Техники</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
@@ -19,6 +19,16 @@
     }
     img.loaded { animation: fadeIn 0.3s ease-in; }
     @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+    
+    /* 🔥 ЗАПРЕТ ЗУМА */
+    * { touch-action: manipulation !important; }
+    img, .image-carousel { 
+      pointer-events: auto !important; 
+      touch-action: manipulation !important; 
+      -webkit-user-select: none; 
+      -webkit-touch-callout: none;
+      cursor: pointer !important;
+    }
     
     /* 🔥 Сетка всегда 2 колонки */
     .product-grid {
@@ -94,21 +104,34 @@
     /* Скролл опций в модалке */
     .scroll-carousel { 
       scroll-snap-type: x mandatory; 
-      scrollbar-width: none; 
+      scrollbar-width: below; 
       -webkit-overflow-scrolling: touch;
       overflow-x: auto;
       overscroll-behavior-x: contain;
     }
-    .scroll-carousel::-webkit-scrollbar { display: none; }
+    .scroll-carousel::-webkit-scrollbar { 
+      height: 4px; 
+    }
+    .scroll-carousel::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 2px;
+    }
     .scroll-item { scroll-snap-align: start; flex-shrink: 0; }
 
-    /* 🔥 ИСПРАВЛЕННАЯ модальная карусель - более круглая фото */
+    /* 🔥 ИСПРАВЛЕННАЯ модальная карусель */
     #modalCarousel {
-      height: 280px !important;
+      height: 260px !important; /* Чуть ниже */
+      margin: 12px 0;
       border-radius: 24px;
+      position: relative;
     }
     #modalCarousel .carousel-img {
       border-radius: 24px;
+    }
+    .modal-image-section {
+      padding: 0 24px 20px;
+      border-bottom: 1px solid #e5e7eb;
+      margin-bottom: 8px;
     }
     .no-images {
       display: flex;
@@ -124,6 +147,14 @@
       width: 80px;
       height: 80px;
       margin-bottom: 12px;
+    }
+
+    /* 🔥 Поиск - виден курсор */
+    #search:focus {
+      color: #1f2937 !important;
+    }
+    #search::placeholder {
+      color: #9ca3af !important;
     }
   </style>
 </head>
@@ -141,7 +172,7 @@
     
     const CATEGORIES = ['Все', 'iPhone', 'iPad', 'MacBook', 'Apple Watch', 'AirPods'];
     let selectedCategory = 'Все', query = '', randomIds = [], loadedCount = 10, imageCache = new Map(), productsData = null;
-    let currentProduct = null, selectedOption = {};
+    let currentProduct = null, selectedOption = {}, searchTimeout = null;
     
     const root = document.getElementById('root');
     const modal = document.getElementById('productModal');
@@ -156,7 +187,23 @@
 
     const FILTER_ORDER = ['simType', 'storage', 'color', 'region'];
 
-    // 🔥 Функция для получения всех уникальных изображений товара
+    // 🔥 ЗАПРЕТ ЗУМА ВЕЗДЕ
+    document.addEventListener('gesturestart', e => e.preventDefault());
+    document.addEventListener('gesturechange', e => e.preventDefault());
+    document.addEventListener('gestureend', e => e.preventDefault());
+    
+    document.addEventListener('touchstart', e => {
+      if (e.touches.length > 1) e.preventDefault();
+    }, { passive: false });
+    
+    let lastTouchEnd = 0;
+    document.addEventListener('touchend', e => {
+      const now = Date.now();
+      if (now - lastTouchEnd <= 300) e.preventDefault();
+      lastTouchEnd = now;
+    }, { passive: false });
+
+    // 🔥 Функция для получения всех уникальных изображений ТОЛЬКО выбранной модели
     function getAllProductImages(productName) {
       const variants = getProductVariants(productName);
       const allImages = new Set();
@@ -274,9 +321,8 @@
       const complete = isCompleteSelection();
       const finalVariant = filteredVariants.length === 1 ? filteredVariants[0] : null;
       
-      // 🔥 Все изображения товара для модалки (только после выбора)
+      // 🔥 ТОЛЬКО фото выбранной модели
       const allProductImages = complete ? getAllProductImages(product.name) : [];
-      const placeholderImg = PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone'];
 
       document.getElementById('modalContent').innerHTML = `
         <div class="flex flex-col h-full max-h-[90vh]">
@@ -295,31 +341,33 @@
             </div>
           </div>
           
-          <div class="flex-1 overflow-hidden px-6 pb-6">
-            <div class="h-64 bg-gray-100 relative mb-6 rounded-2xl overflow-hidden image-carousel" id="modalCarousel">
-              ${complete && allProductImages.length > 0 ? `
-                <div class="image-carousel-inner" id="modalCarouselInner">
-                  ${allProductImages.slice(0, 10).map(img => `
-                    <img src="${img}" class="carousel-img loaded" alt="Product image" />
-                  `).join('')}
-                </div>
-                ${allProductImages.length > 1 ? `
-                  <button class="nav-btn nav-prev" onclick="modalPrevImage()">‹</button>
-                  <button class="nav-btn nav-next" onclick="modalNextImage()">›</button>
-                  <div class="carousel-dots" id="modalDots">
-                    ${Array(Math.min(allProductImages.length, 10)).fill().map((_, idx) => 
-                      `<div class="dot ${idx === 0 ? 'active' : ''}" onclick="modalGoToImage(${idx})"></div>`
-                    ).join('')}
+          <div class="flex-1 overflow-hidden">
+            <div class="modal-image-section">
+              <div class="h-64 bg-gray-100 relative mb-6 rounded-2xl overflow-hidden image-carousel" id="modalCarousel">
+                ${complete && allProductImages.length > 0 ? `
+                  <div class="image-carousel-inner" id="modalCarouselInner">
+                    ${allProductImages.slice(0, 10).map(img => `
+                      <img src="${img}" class="carousel-img loaded" alt="Product image" />
+                    `).join('')}
                   </div>
-                ` : ''}
-              ` : `
-                <div class="no-images">
-                  <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-                  </svg>
-                  <div class="text-center text-sm font-medium">Выберите все параметры для просмотра фото</div>
-                </div>
-              `}
+                  ${allProductImages.length > 1 ? `
+                    <button class="nav-btn nav-prev" onclick="modalPrevImage()">‹</button>
+                    <button class="nav-btn nav-next" onclick="modalNextImage()">›</button>
+                    <div class="carousel-dots" id="modalDots">
+                      ${Array(Math.min(allProductImages.length, 10)).fill().map((_, idx) => 
+                        `<div class="dot ${idx === 0 ? 'active' : ''}" onclick="modalGoToImage(${idx})"></div>`
+                      ).join('')}
+                    </div>
+                  ` : ''}
+                ` : `
+                  <div class="no-images">
+                    <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                    <div class="text-center text-sm font-medium">Выберите все параметры для просмотра фото</div>
+                  </div>
+                `}
+              </div>
             </div>
           </div>
 
@@ -362,12 +410,10 @@
         </div>
       `;
 
-      // Инициализация модальной карусели только если есть полная выборка И фото
       if (complete && allProductImages.length > 0) {
-        initModalCarousel(Math.min(allProductImages.length, 10));
+        setTimeout(() => initModalCarousel(Math.min(allProductImages.length, 10)), 50);
       }
       
-      // 🔥 Добавляем обработчики кнопок опций после рендера
       setTimeout(() => {
         document.querySelectorAll('.option-btn').forEach(btn => {
           btn.onclick = function() {
@@ -379,7 +425,6 @@
       }, 100);
     }
 
-    // 🔥 Модальная карусель
     let modalCurrentIndex = 0;
     let modalImageCount = 0;
     function initModalCarousel(imageCount) {
@@ -387,31 +432,27 @@
       
       modalImageCount = imageCount;
       const inner = document.getElementById('modalCarouselInner');
-      const dots = document.getElementById('modalDots');
+      if (!inner) return;
       
       function updateCarousel() {
-        if (!inner) return;
         inner.style.transform = `translateX(-${modalCurrentIndex * 100}%)`;
-        if (dots) {
-          document.querySelectorAll('#modalDots .dot').forEach((dot, idx) => {
-            dot.classList.toggle('active', idx === modalCurrentIndex);
-          });
-        }
+        const dots = document.querySelectorAll('#modalDots .dot');
+        dots.forEach((dot, idx) => dot.classList.toggle('active', idx === modalCurrentIndex));
       }
       
-      window.modalNextImage = function() {
+      window.modalNextImage = () => {
         modalCurrentIndex = (modalCurrentIndex + 1) % modalImageCount;
         updateCarousel();
         tg?.HapticFeedback?.selectionChanged();
       };
       
-      window.modalPrevImage = function() {
+      window.modalPrevImage = () => {
         modalCurrentIndex = modalCurrentIndex === 0 ? modalImageCount - 1 : modalCurrentIndex - 1;
         updateCarousel();
         tg?.HapticFeedback?.selectionChanged();
       };
       
-      window.modalGoToImage = function(index) {
+      window.modalGoToImage = (index) => {
         modalCurrentIndex = index;
         updateCarousel();
         tg?.HapticFeedback?.selectionChanged();
@@ -419,12 +460,7 @@
     }
 
     function getLabel(type) {
-      const labels = {
-        simType: 'SIM/eSIM',
-        storage: 'Память', 
-        color: 'Цвет',
-        region: 'Регион'
-      };
+      const labels = { simType: 'SIM/eSIM', storage: 'Память', color: 'Цвет', region: 'Регион' };
       return labels[type] || type;
     }
 
@@ -453,7 +489,7 @@
                 <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"/>
                 </svg>
-                <input id="search" value="${escapeHtml(query)}" placeholder="Поиск..." class="w-full bg-transparent outline-none text-sm" />
+                <input id="search" value="${escapeHtml(query)}" placeholder="Поиск..." class="w-full bg-transparent outline-none text-sm text-gray-900" />
               </div>
             </div>
           </div>
@@ -474,27 +510,19 @@
       setupImageCarousels();
     }
 
+    // Остальные функции без изменений...
     function productCard(product) {
-      // 🔥 Показываем все изображения товара в превью
       const allProductImages = getAllProductImages(product.name);
-      const images = allProductImages.length > 0 ? 
-        allProductImages.slice(0, 3) : 
-        [PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone']];
-      
+      const images = allProductImages.length > 0 ? allProductImages.slice(0, 3) : [PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone']];
       const variants = getProductVariants(product.name);
       const cheapestVariant = variants.reduce((min, p) => p.price < min.price ? p : min, variants[0]);
-      
       const carouselId = `carousel_${product.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
       return `
-        <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group cursor-pointer relative" 
-             data-product-name="${escapeHtml(product.name)}" data-carousel-id="${carouselId}">
+        <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group cursor-pointer relative" data-product-name="${escapeHtml(product.name)}" data-carousel-id="${carouselId}">
           <div class="w-full h-32 rounded-xl mb-3 image-carousel group-hover:scale-105 transition-transform">
             <div class="image-carousel-inner" data-current="0">
-              ${images.map((img, idx) => `
-                <img src="${img}" class="carousel-img ${idx === 0 ? 'loaded' : ''}" 
-                     data-real-src="${img}" alt="Product ${idx + 1}" />
-              `).join('')}
+              ${images.map((img, idx) => `<img src="${img}" class="carousel-img ${idx === 0 ? 'loaded' : ''}" data-real-src="${img}" alt="Product ${idx + 1}" />`).join('')}
             </div>
             ${images.length > 1 ? `
               <button class="nav-btn nav-prev" onclick="prevImage('${carouselId}')">‹</button>
@@ -516,7 +544,6 @@
       `;
     }
 
-    // 🔥 Предзагрузка ВСЕХ изображений карточек
     function preloadAllImages(products) {
       products.forEach(product => {
         const allImages = getAllProductImages(product.name);
@@ -540,10 +567,7 @@
         
         function updateCarousel() {
           inner.style.transform = `translateX(-${currentIndex * 100}%)`;
-          dots.forEach((dot, idx) => {
-            dot.classList.toggle('active', idx === currentIndex);
-          });
-          
+          dots.forEach((dot, idx) => dot.classList.toggle('active', idx === currentIndex));
           const nextImg = inner.querySelectorAll('.carousel-img')[currentIndex];
           if (nextImg && !nextImg.complete && nextImg.dataset.realSrc) {
             nextImg.src = nextImg.dataset.realSrc;
@@ -551,7 +575,6 @@
           }
         }
         
-        // 🔥 Универсальные функции для карусели
         window[`nextImage_${id}`] = () => {
           currentIndex = (currentIndex + 1) % inner.children.length;
           updateCarousel();
@@ -572,28 +595,12 @@
           };
         });
         
-        let startX = 0;
-        carousel.addEventListener('touchstart', e => startX = e.touches[0].clientX);
-        carousel.addEventListener('touchend', e => {
-          const endX = e.changedTouches[0].clientX;
-          const diff = startX - endX;
-          if (Math.abs(diff) > 30) {
-            if (diff > 0) window[`nextImage_${id}`]?.();
-            else window[`prevImage_${id}`]?.();
-          }
-        });
-        
         updateCarousel();
       });
     }
 
-    window.nextImage = function(id) {
-      window[`nextImage_${id}`]?.();
-    };
-    
-    window.prevImage = function(id) {
-      window[`prevImage_${id}`]?.();
-    };
+    window.nextImage = id => window[`nextImage_${id}`]?.();
+    window.prevImage = id => window[`prevImage_${id}`]?.();
 
     function setupHandlers() {
       const categoryEl = document.getElementById('category');
@@ -611,8 +618,12 @@
       if (searchEl) {
         searchEl.oninput = (e) => {
           query = e.target.value || '';
-          loadedCount = 10;
-          render();
+          // 🔥 Дебounce для поиска - обновление через 300мс
+          clearTimeout(searchTimeout);
+          searchTimeout = setTimeout(() => {
+            loadedCount = 10;
+            render();
+          }, 300);
         };
       }
 
@@ -637,7 +648,7 @@
       tg?.expand();
     }
 
-    window.closeModal = function() {
+    window.closeModal = () => {
       modal.classList.add('hidden');
       document.body.style.overflow = '';
       selectedOption = {};
@@ -645,7 +656,7 @@
       tg?.HapticFeedback?.impactOccurred('light');
     };
 
-    window.selectOption = function(type, option) {
+    window.selectOption = (type, option) => {
       if (selectedOption[type] === option) {
         const typeIndex = FILTER_ORDER.indexOf(type);
         for (let i = typeIndex; i < FILTER_ORDER.length; i++) {
@@ -662,7 +673,7 @@
       tg?.HapticFeedback?.impactOccurred('light');
     };
 
-    window.clearOption = function(type) {
+    window.clearOption = (type) => {
       const typeIndex = FILTER_ORDER.indexOf(type);
       for (let i = typeIndex; i < FILTER_ORDER.length; i++) {
         delete selectedOption[FILTER_ORDER[i]];
@@ -671,18 +682,16 @@
       tg?.HapticFeedback?.impactOccurred('light');
     };
 
-    window.addToCartFromModal = function() {
+    window.addToCartFromModal = () => {
       if (!isCompleteSelection()) {
         tg?.showAlert?.('❌ Выберите все опции: SIM → Память → Цвет → Регион');
         return;
       }
-
       const variants = getFilteredVariants(getProductVariants(currentProduct.name));
       if (variants.length === 0) {
         tg?.showAlert?.('❌ Нет доступных вариантов');
         return;
       }
-      
       const selectedVariant = variants[0];
       tg?.HapticFeedback?.impactOccurred('medium');
       tg?.showAlert?.(`✅ ${selectedVariant.name}\n${selectedVariant.storage} | ${selectedVariant.color} | ${selectedVariant.region}\n$${selectedVariant.price}`);
@@ -692,7 +701,6 @@
 
     function getVisibleProducts() {
       if (!productsData) return [];
-      
       let base = selectedCategory === 'Все' ? 
         productsData.filter(p => randomIds.includes(p.id)) : 
         productsData.filter(p => p.cat === selectedCategory);
@@ -707,8 +715,7 @@
       if (query.trim()) {
         const q = query.trim().toLowerCase();
         return Object.values(grouped).filter(p => 
-          p.name?.toLowerCase().includes(q) || 
-          p.cat?.toLowerCase().includes(q)
+          p.name?.toLowerCase().includes(q) || p.cat?.toLowerCase().includes(q)
         );
       }
       return Object.values(grouped);
