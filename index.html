@@ -37,12 +37,11 @@
     const tg = window.Telegram?.WebApp;
     try { tg?.ready(); tg?.expand(); } catch(e) {}
 
-    // 🔥 ВСТАВЬТЕ СЮДА ВАШ GOOGLE APPS SCRIPT URL
     const API_URL = 'https://script.google.com/macros/s/AKfycbzo-HEFFXRjN6PQrhWNhlInY2sP244r30gOyAMHLA0y2mAbA8jcOUtr1RcFhL_1A8GliQ/exec';
     
     const CATEGORIES = ['Все', 'iPhone', 'iPad', 'MacBook', 'Apple Watch', 'AirPods'];
     let selectedCategory = 'Все', query = '', randomIds = [], loadedCount = 10, imageCache = new Map(), productsData = null;
-    let currentProduct = null, selectedFilters = {};
+    let currentProduct = null, selectedOption = {}; // {simType: 'SIM', storage: '512GB', color: 'Black Titanium', region: 'EU'}
     
     const root = document.getElementById('root');
     const modal = document.getElementById('productModal');
@@ -55,7 +54,9 @@
       'AirPods': 'https://via.placeholder.com/300x300/30D158/FFFFFF?text=AirPods'
     };
 
-    // ====== ЗАГРУЗКА ТОВАРОВ (ГРУППИРОВАННЫЕ ДАННЫЕ) ======
+    // Порядок фильтров
+    const FILTER_ORDER = ['simType', 'storage', 'color', 'region'];
+
     async function initApp() {
       try {
         root.innerHTML = `
@@ -74,7 +75,6 @@
           throw new Error('Нет товаров в Google Sheets');
         }
         
-        // ✅ РАСПАКОВЫВАЕМ ГРУППИРОВАННЫЕ ДАННЫЕ В ПЛОСКИЙ МАССИВ
         productsData = products.flatMap(product => 
           product.variants.map(variant => ({
             id: variant.id,
@@ -105,7 +105,6 @@
       render();
     }
 
-    // ====== ОШИБКА ======
     function showError(message) {
       root.innerHTML = `
         <div class="flex flex-col items-center justify-center min-h-screen text-center p-8">
@@ -126,23 +125,122 @@
       tg?.showAlert?.(`❌ ${message}`);
     }
 
-    // ====== ГРУППИРОВКА ПО ТОВАРАМ ======
     function getProductVariants(productName) {
       return productsData.filter(p => p.name === productName);
     }
 
-    // ====== ФИЛЬТРАЦИЯ ВАРИАНТОВ ======
+    // 🔥 НОВЫЕ ФУНКЦИИ ДЛЯ КАСКАДНОЙ ФИЛЬТРАЦИИ
     function getFilteredVariants(variants) {
       return variants.filter(variant => {
-        return Object.entries(selectedFilters).every(([key, value]) => {
-          if (!value) return true;
-          const [type, option] = key.split('_');
-          return variant[type] === option;
+        return FILTER_ORDER.every(type => {
+          const selectedValue = selectedOption[type];
+          return !selectedValue || variant[type] === selectedValue;
         });
       });
     }
 
-    // ====== ОСНОВНОЙ РЕНДЕР ======
+    function getAvailableOptions(type, variants) {
+      const filteredVariants = getFilteredVariants(variants);
+      const options = [...new Set(filteredVariants.map(v => v[type]).filter(Boolean))];
+      return options.sort();
+    }
+
+    function renderProductModal(product) {
+      currentProduct = product;
+      const variants = getProductVariants(product.name);
+      const filteredVariants = getFilteredVariants(variants);
+      
+      // Получаем доступные опции для каждого типа
+      const availableOptions = {};
+      FILTER_ORDER.forEach(type => {
+        availableOptions[type] = getAvailableOptions(type, variants);
+      });
+
+      document.getElementById('modalContent').innerHTML = `
+        <div class="flex flex-col h-full max-h-[90vh]">
+          <div class="p-6 pb-4 border-b border-gray-200">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="text-2xl font-bold">${escapeHtml(product.name)}</h2>
+              <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-xl">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+              <span>от $${Math.min(...variants.map(v => v.price))}</span>
+              <span>• ${variants.length} вариантов</span>
+            </div>
+          </div>
+          
+          <div class="flex-1 overflow-hidden px-6 pb-6">
+            <div class="h-64 bg-gray-100 relative mb-6 rounded-2xl overflow-hidden">
+              <div class="absolute inset-0 flex transition-opacity duration-300" id="mainImageContainer">
+                ${filteredVariants.slice(0, 3).map((v, idx) => `
+                  <img src="${v.images[0] || PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone']}" 
+                       class="w-full h-full object-cover absolute inset-0 ${idx === 0 ? '' : 'hidden'}" 
+                       data-variant="${v.code}" />
+                `).join('')}
+              </div>
+              ${filteredVariants.length > 1 ? `
+                <div class="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto pb-1 image-carousel">
+                  ${filteredVariants.slice(0, 6).map((v, idx) => `
+                    <button onclick="switchVariantImage('${v.code}')" 
+                            class="w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 ${idx === 0 ? 'border-blue-500 shadow-lg ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'} bg-white">
+                      <img src="${v.images[0] || PLACEHOLDERS[product.cat]}" class="w-full h-full object-cover" />
+                    </button>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <div class="p-6 space-y-4 overflow-y-auto max-h-80">
+            ${FILTER_ORDER.map(type => `
+              <div>
+                <label class="text-sm font-semibold text-gray-700 capitalize mb-2 block">${getLabel(type)}</label>
+                <div class="flex flex-wrap gap-2">
+                  ${availableOptions[type].map(option => `
+                    <button onclick="selectOption('${type}', '${escapeHtml(option)}')" 
+                            class="px-3 py-1.5 text-xs font-medium rounded-full border 
+                            ${selectedOption[type] === option ? 'bg-blue-500 text-white border-blue-500 shadow-md' : 'bg-gray-100 border-gray-300 hover:bg-gray-200'} 
+                            transition-all">
+                      ${escapeHtml(option)}
+                    </button>
+                  `).join('')}
+                  ${selectedOption[type] ? `<button onclick="clearOption('${type}')" class="px-3 py-1.5 text-xs text-red-500 font-medium rounded-full border border-red-200 hover:bg-red-50 ml-2">✕</button>` : ''}
+                </div>
+                ${!availableOptions[type].length ? '<p class="text-xs text-gray-400 mt-1">Нет вариантов</p>' : ''}
+              </div>
+            `).join('')}
+            
+            <div class="pt-4 border-t">
+              <div class="text-center text-sm text-gray-500 mb-4">
+                Доступно: <span id="variantCount" class="font-bold text-blue-600">${filteredVariants.length}</span> вариантов
+                ${filteredVariants.length === 1 ? `<div class="text-xs mt-1">${filteredVariants[0].storage} | ${filteredVariants[0].color} | ${filteredVariants[0].region}</div>` : ''}
+              </div>
+              <button onclick="addToCartFromModal()" 
+                      class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-2xl text-lg shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      ${filteredVariants.length === 0 ? 'disabled' : ''}>
+                ${filteredVariants.length === 1 ? `В корзину $${filteredVariants[0].price}` : `В корзину от $${Math.min(...filteredVariants.map(v => v.price))}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // 🔥 ПОЛУЧЕНИЕ ПОДПИСЕЙ ДЛЯ ФИЛЬТРОВ
+    function getLabel(type) {
+      const labels = {
+        simType: 'SIM/eSIM',
+        storage: 'Память',
+        color: 'Цвет',
+        region: 'Регион'
+      };
+      return labels[type] || type;
+    }
+
     function render() {
       if (!productsData || productsData.length === 0) {
         root.innerHTML = '<div class="text-center p-20 text-gray-500">Нет товаров</div>';
@@ -189,7 +287,6 @@
       setTimeout(setupInfiniteScroll, 100);
     }
 
-    // ====== КАРТОЧКА ТОВАРА СО СЛАЙДЕРОМ ======
     function productCard(product) {
       const variants = getProductVariants(product.name);
       const cheapestVariant = variants.reduce((min, p) => p.price < min.price ? p : min);
@@ -225,91 +322,6 @@
       `;
     }
 
-    // ====== МОДАЛКА ТОВАРА ======
-    function renderProductModal(product) {
-      currentProduct = product;
-      const variants = getProductVariants(product.name);
-      
-      const uniqueOptions = {
-        storage: [...new Set(variants.map(v => v.storage))].filter(Boolean).sort(),
-        region: [...new Set(variants.map(v => v.region))].filter(Boolean).sort(),
-        simType: [...new Set(variants.map(v => v.simType))].filter(Boolean).sort(),
-        color: [...new Set(variants.map(v => v.color))].filter(Boolean).sort()
-      };
-
-      const filteredVariants = getFilteredVariants(variants);
-      
-      document.getElementById('modalContent').innerHTML = `
-        <div class="flex flex-col h-full max-h-[90vh]">
-          <div class="p-6 pb-4 border-b border-gray-200">
-            <div class="flex items-center justify-between mb-2">
-              <h2 class="text-2xl font-bold">${escapeHtml(product.name)}</h2>
-              <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-xl">
-                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-              </button>
-            </div>
-            <div class="flex items-center gap-2 text-sm text-gray-500">
-              <span>от $${Math.min(...variants.map(v => v.price))}</span>
-              <span>• ${variants.length} вариантов</span>
-            </div>
-          </div>
-          
-          <div class="flex-1 overflow-hidden px-6 pb-6">
-            <div class="h-64 bg-gray-100 relative mb-6 rounded-2xl overflow-hidden">
-              <div class="absolute inset-0 flex transition-opacity duration-300" id="mainImageContainer">
-                ${filteredVariants.slice(0, 3).map((v, idx) => `
-                  <img src="${v.images[0] || PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone']}" 
-                       class="w-full h-full object-cover absolute inset-0 ${idx === 0 ? '' : 'hidden'}" 
-                       data-variant="${v.code}" />
-                `).join('')}
-              </div>
-              ${filteredVariants.length > 1 ? `
-                <div class="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto pb-1 image-carousel">
-                  ${filteredVariants.slice(0, 6).map((v, idx) => `
-                    <button onclick="switchVariantImage('${v.code}')" 
-                            class="w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 ${idx === 0 ? 'border-blue-500 shadow-lg ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'} bg-white">
-                      <img src="${v.images[0] || PLACEHOLDERS[product.cat]}" class="w-full h-full object-cover" />
-                    </button>
-                  `).join('')}
-                </div>
-              ` : ''}
-            </div>
-          </div>
-
-          <div class="p-6 space-y-4 overflow-y-auto max-h-80">
-            ${Object.entries(uniqueOptions).filter(([_, options]) => options.length > 1).map(([type, options]) => `
-              <div>
-                <label class="text-sm font-semibold text-gray-700 capitalize mb-2 block">${type}</label>
-                <div class="flex flex-wrap gap-2">
-                  ${options.map(option => `
-                    <button onclick="toggleFilter('${type}', '${escapeHtml(option)}')" 
-                            class="px-3 py-1.5 text-xs font-medium rounded-full border ${selectedFilters[`${type}_${option}`] ? 'bg-blue-500 text-white border-blue-500 shadow-md' : 'bg-gray-100 border-gray-300 hover:bg-gray-200'} transition-all">
-                      ${escapeHtml(option)}
-                    </button>
-                  `).join('')}
-                  ${Object.keys(selectedFilters).some(k => k.startsWith(type + '_')) ? `<button onclick="clearFilter('${type}')" class="px-3 py-1.5 text-xs text-red-500 font-medium rounded-full border border-red-200 hover:bg-red-50 ml-2">✕</button>` : ''}
-                </div>
-              </div>
-            `).join('')}
-            
-            <div class="pt-4 border-t">
-              <div class="text-center text-sm text-gray-500 mb-4">
-                Доступно: <span id="variantCount" class="font-bold text-blue-600">${filteredVariants.length}</span> вариантов
-              </div>
-              <button onclick="addToCartFromModal()" 
-                      class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-2xl text-lg shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                      ${filteredVariants.length === 0 ? 'disabled' : ''}>
-                В корзину от $${Math.min(...filteredVariants.map(v => v.price))}
-              </button>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
-    // ====== ОБРАБОТЧИКИ ======
     function setupHandlers() {
       document.getElementById('category')?.addEventListener('change', (e) => {
         selectedCategory = e.target.value;
@@ -330,7 +342,7 @@
           const productName = card.dataset.productName;
           const product = productsData.find(p => p.name === productName);
           if (product) {
-            selectedFilters = {};
+            selectedOption = {};
             showModal(product);
             tg?.HapticFeedback?.impactOccurred('medium');
           }
@@ -338,7 +350,6 @@
       });
     }
 
-    // ====== МОДАЛКА ======
     function showModal(product) {
       renderProductModal(product);
       modal.classList.remove('hidden');
@@ -349,22 +360,30 @@
     window.closeModal = function() {
       modal.classList.add('hidden');
       document.body.style.overflow = '';
-      selectedFilters = {};
+      selectedOption = {};
       currentProduct = null;
       tg?.HapticFeedback?.impactOccurred('light');
     };
 
-    window.toggleFilter = function(type, option) {
-      const key = `${type}_${option}`;
-      selectedFilters[key] = !selectedFilters[key];
+    // 🔥 НОВЫЕ ФУНКЦИИ ВЫБОРА ОПЦИЙ (только одна активная)
+    window.selectOption = function(type, option) {
+      // Очищаем все последующие опции
+      const typeIndex = FILTER_ORDER.indexOf(type);
+      for (let i = typeIndex + 1; i < FILTER_ORDER.length; i++) {
+        delete selectedOption[FILTER_ORDER[i]];
+      }
+      
+      selectedOption[type] = option;
       renderProductModal(currentProduct);
       tg?.HapticFeedback?.impactOccurred('light');
     };
 
-    window.clearFilter = function(type) {
-      Object.keys(selectedFilters).forEach(key => {
-        if (key.startsWith(type + '_')) delete selectedFilters[key];
-      });
+    window.clearOption = function(type) {
+      const typeIndex = FILTER_ORDER.indexOf(type);
+      // Очищаем эту и все последующие опции
+      for (let i = typeIndex; i < FILTER_ORDER.length; i++) {
+        delete selectedOption[FILTER_ORDER[i]];
+      }
       renderProductModal(currentProduct);
       tg?.HapticFeedback?.impactOccurred('light');
     };
@@ -390,14 +409,13 @@
         return;
       }
       
-      const cheapest = variants.reduce((min, v) => v.price < min.price ? v : min);
+      const selectedVariant = variants[0]; // Берем первый (единственный) доступный
       tg?.HapticFeedback?.impactOccurred('medium');
-      tg?.showAlert?.(`✅ ${cheapest.name}\n${cheapest.storage} | ${cheapest.color}\n$${cheapest.price}`);
+      tg?.showAlert?.(`✅ ${selectedVariant.name}\n${selectedVariant.storage} | ${selectedVariant.color} | ${selectedVariant.region}\n$${selectedVariant.price}`);
       tg?.MainButton?.setText('Корзина (1)')?.show();
       closeModal();
     };
 
-    // ====== ПРОЧИЕ ФУНКЦИИ ======
     function setupInfiniteScroll() {
       const grid = document.getElementById('productGrid');
       if (!grid) return;
@@ -492,12 +510,10 @@
       tg?.MainButton?.setText('Корзина (1)')?.show();
     };
 
-    // Закрытие модалки по клику вне её
     modal?.addEventListener('click', (e) => {
       if (e.target === modal) closeModal();
     });
 
-    // ====== СТАРТ ======
     initApp();
   </script>
 </body>
