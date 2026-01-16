@@ -37,7 +37,8 @@
     const tg = window.Telegram?.WebApp;
     try { tg?.ready(); tg?.expand(); } catch(e) {}
 
-    const API_URL = 'https://script.google.com/macros/s/AKfycbyqVkSFrGDzCpD76FuUQohIo0jobo0yE8QvqZb4ZH6YjzfvYUJp_2uBiym7f7axx_tFqg/exec';
+    // 🔥 ВСТАВЬТЕ СЮДА ВАШ GOOGLE APPS SCRIPT URL
+    const API_URL = 'https://script.google.com/macros/s/AKfycbzo-HEFFXRjN6PQrhWNhlInY2sP244r30gOyAMHLA0y2mAbA8jcOUtr1RcFhL_1A8GliQ/exec';
     
     const CATEGORIES = ['Все', 'iPhone', 'iPad', 'MacBook', 'Apple Watch', 'AirPods'];
     let selectedCategory = 'Все', query = '', randomIds = [], loadedCount = 10, imageCache = new Map(), productsData = null;
@@ -54,34 +55,7 @@
       'AirPods': 'https://via.placeholder.com/300x300/30D158/FFFFFF?text=AirPods'
     };
 
-    // ====== ПАРСИНГ ДАННЫХ ИЗ GOOGLE SHEETS ======
-    function parseProductsData(rawData) {
-      const products = [];
-      rawData.forEach((row, index) => {
-        if (index === 0 || !row[0]) return;
-        
-        const [name, price, cat, code, storage, region, simType, color, imagesStr] = row;
-        const images = imagesStr ? imagesStr.split(',').map(img => 
-          img.trim().replace(/\[|\]/g, '').replace(/\(/g, '').replace(/\)/g, '')
-        ).filter(Boolean) : [];
-        
-        products.push({
-          id: code || `product_${index}`,
-          name: name || 'Без названия',
-          price: parseInt(price) || 0,
-          cat: cat || 'Другое',
-          code: code || `code_${index}`,
-          storage: storage || '',
-          region: region || '',
-          simType: simType || '',
-          color: color || '',
-          images
-        });
-      });
-      return products;
-    }
-
-    // ====== ЗАГРУЗКА ТОВАРОВ ======
+    // ====== ЗАГРУЗКА ТОВАРОВ (ГРУППИРОВАННЫЕ ДАННЫЕ) ======
     async function initApp() {
       try {
         root.innerHTML = `
@@ -95,15 +69,26 @@
         const response = await fetch(API_URL);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         
-        const rawData = await response.json();
-        if (!Array.isArray(rawData) || rawData.length === 0) {
-          throw new Error('Неверный формат данных из Google Sheets');
-        }
-        
-        productsData = parseProductsData(rawData);
-        if (productsData.length === 0) {
+        const products = await response.json();
+        if (!Array.isArray(products) || products.length === 0) {
           throw new Error('Нет товаров в Google Sheets');
         }
+        
+        // ✅ РАСПАКОВЫВАЕМ ГРУППИРОВАННЫЕ ДАННЫЕ В ПЛОСКИЙ МАССИВ
+        productsData = products.flatMap(product => 
+          product.variants.map(variant => ({
+            id: variant.id,
+            name: product.name,
+            price: variant.price,
+            cat: product.category,
+            code: variant.id,
+            storage: variant.memory || '',
+            region: variant.region || '',
+            simType: variant.sim || '',
+            color: variant.color || '',
+            images: variant.images || []
+          }))
+        );
         
         console.log('✅ Загружено товаров:', productsData.length);
         
@@ -113,27 +98,32 @@
         
       } catch(error) {
         console.error('❌ API ошибка:', error);
-        root.innerHTML = `
-          <div class="flex flex-col items-center justify-center min-h-screen text-center p-8">
-            <div class="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mb-6">
-              <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-            <h2 class="text-2xl font-bold text-gray-800 mb-4">Ошибка загрузки</h2>
-            <p class="text-lg text-red-600 mb-2">${error.message}</p>
-            <p class="text-sm text-gray-500 mb-8">Проверьте Google Apps Script URL</p>
-            <button onclick="location.reload()" 
-                    class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-2xl shadow-lg transition-all">
-              Попробовать снова
-            </button>
-          </div>
-        `;
-        tg?.showAlert?.(`❌ ${error.message}`);
+        showError(error.message);
         return;
       }
       
       render();
+    }
+
+    // ====== ОШИБКА ======
+    function showError(message) {
+      root.innerHTML = `
+        <div class="flex flex-col items-center justify-center min-h-screen text-center p-8">
+          <div class="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mb-6">
+            <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+          </div>
+          <h2 class="text-2xl font-bold text-gray-800 mb-4">Ошибка загрузки</h2>
+          <p class="text-lg text-red-600 mb-2">${escapeHtml(message)}</p>
+          <p class="text-sm text-gray-500 mb-8">Проверьте Google Apps Script URL</p>
+          <button onclick="location.reload()" 
+                  class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-2xl shadow-lg transition-all">
+            Попробовать снова
+          </button>
+        </div>
+      `;
+      tg?.showAlert?.(`❌ ${message}`);
     }
 
     // ====== ГРУППИРОВКА ПО ТОВАРАМ ======
@@ -199,11 +189,13 @@
       setTimeout(setupInfiniteScroll, 100);
     }
 
-    // Остальные функции без изменений...
+    // ====== КАРТОЧКА ТОВАРА СО СЛАЙДЕРОМ ======
     function productCard(product) {
       const variants = getProductVariants(product.name);
       const cheapestVariant = variants.reduce((min, p) => p.price < min.price ? p : min);
-      const images = cheapestVariant.images.length ? cheapestVariant.images.slice(0, 3) : [PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone']];
+      const images = cheapestVariant.images.length ? 
+        cheapestVariant.images.slice(0, 3) : 
+        [PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone']];
       
       return `
         <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group cursor-pointer relative" 
@@ -233,9 +225,91 @@
       `;
     }
 
-    // ====== Все остальные функции остаются ТАКИМИ ЖЕ как в предыдущем коде ======
-    // (renderProductModal, setupHandlers, showModal, closeModal, toggleFilter, etc.)
+    // ====== МОДАЛКА ТОВАРА ======
+    function renderProductModal(product) {
+      currentProduct = product;
+      const variants = getProductVariants(product.name);
+      
+      const uniqueOptions = {
+        storage: [...new Set(variants.map(v => v.storage))].filter(Boolean).sort(),
+        region: [...new Set(variants.map(v => v.region))].filter(Boolean).sort(),
+        simType: [...new Set(variants.map(v => v.simType))].filter(Boolean).sort(),
+        color: [...new Set(variants.map(v => v.color))].filter(Boolean).sort()
+      };
 
+      const filteredVariants = getFilteredVariants(variants);
+      
+      document.getElementById('modalContent').innerHTML = `
+        <div class="flex flex-col h-full max-h-[90vh]">
+          <div class="p-6 pb-4 border-b border-gray-200">
+            <div class="flex items-center justify-between mb-2">
+              <h2 class="text-2xl font-bold">${escapeHtml(product.name)}</h2>
+              <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-xl">
+                <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+              </button>
+            </div>
+            <div class="flex items-center gap-2 text-sm text-gray-500">
+              <span>от $${Math.min(...variants.map(v => v.price))}</span>
+              <span>• ${variants.length} вариантов</span>
+            </div>
+          </div>
+          
+          <div class="flex-1 overflow-hidden px-6 pb-6">
+            <div class="h-64 bg-gray-100 relative mb-6 rounded-2xl overflow-hidden">
+              <div class="absolute inset-0 flex transition-opacity duration-300" id="mainImageContainer">
+                ${filteredVariants.slice(0, 3).map((v, idx) => `
+                  <img src="${v.images[0] || PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone']}" 
+                       class="w-full h-full object-cover absolute inset-0 ${idx === 0 ? '' : 'hidden'}" 
+                       data-variant="${v.code}" />
+                `).join('')}
+              </div>
+              ${filteredVariants.length > 1 ? `
+                <div class="absolute bottom-3 left-3 right-3 flex gap-2 overflow-x-auto pb-1 image-carousel">
+                  ${filteredVariants.slice(0, 6).map((v, idx) => `
+                    <button onclick="switchVariantImage('${v.code}')" 
+                            class="w-16 h-16 rounded-xl overflow-hidden border-2 flex-shrink-0 ${idx === 0 ? 'border-blue-500 shadow-lg ring-2 ring-blue-200' : 'border-gray-200 hover:border-gray-300'} bg-white">
+                      <img src="${v.images[0] || PLACEHOLDERS[product.cat]}" class="w-full h-full object-cover" />
+                    </button>
+                  `).join('')}
+                </div>
+              ` : ''}
+            </div>
+          </div>
+
+          <div class="p-6 space-y-4 overflow-y-auto max-h-80">
+            ${Object.entries(uniqueOptions).filter(([_, options]) => options.length > 1).map(([type, options]) => `
+              <div>
+                <label class="text-sm font-semibold text-gray-700 capitalize mb-2 block">${type}</label>
+                <div class="flex flex-wrap gap-2">
+                  ${options.map(option => `
+                    <button onclick="toggleFilter('${type}', '${escapeHtml(option)}')" 
+                            class="px-3 py-1.5 text-xs font-medium rounded-full border ${selectedFilters[`${type}_${option}`] ? 'bg-blue-500 text-white border-blue-500 shadow-md' : 'bg-gray-100 border-gray-300 hover:bg-gray-200'} transition-all">
+                      ${escapeHtml(option)}
+                    </button>
+                  `).join('')}
+                  ${Object.keys(selectedFilters).some(k => k.startsWith(type + '_')) ? `<button onclick="clearFilter('${type}')" class="px-3 py-1.5 text-xs text-red-500 font-medium rounded-full border border-red-200 hover:bg-red-50 ml-2">✕</button>` : ''}
+                </div>
+              </div>
+            `).join('')}
+            
+            <div class="pt-4 border-t">
+              <div class="text-center text-sm text-gray-500 mb-4">
+                Доступно: <span id="variantCount" class="font-bold text-blue-600">${filteredVariants.length}</span> вариантов
+              </div>
+              <button onclick="addToCartFromModal()" 
+                      class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-2xl text-lg shadow-lg transform hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                      ${filteredVariants.length === 0 ? 'disabled' : ''}>
+                В корзину от $${Math.min(...filteredVariants.map(v => v.price))}
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    // ====== ОБРАБОТЧИКИ ======
     function setupHandlers() {
       document.getElementById('category')?.addEventListener('change', (e) => {
         selectedCategory = e.target.value;
@@ -264,7 +338,7 @@
       });
     }
 
-    // Короткие версии остальных функций (полный код выше)
+    // ====== МОДАЛКА ======
     function showModal(product) {
       renderProductModal(product);
       modal.classList.remove('hidden');
@@ -280,6 +354,123 @@
       tg?.HapticFeedback?.impactOccurred('light');
     };
 
+    window.toggleFilter = function(type, option) {
+      const key = `${type}_${option}`;
+      selectedFilters[key] = !selectedFilters[key];
+      renderProductModal(currentProduct);
+      tg?.HapticFeedback?.impactOccurred('light');
+    };
+
+    window.clearFilter = function(type) {
+      Object.keys(selectedFilters).forEach(key => {
+        if (key.startsWith(type + '_')) delete selectedFilters[key];
+      });
+      renderProductModal(currentProduct);
+      tg?.HapticFeedback?.impactOccurred('light');
+    };
+
+    window.switchVariantImage = function(code) {
+      document.querySelectorAll('#mainImageContainer img').forEach(img => {
+        img.classList.toggle('hidden', img.dataset.variant !== code);
+      });
+      document.querySelectorAll('#modalContent button').forEach(btn => {
+        if (btn.onclick.toString().includes(code)) {
+          btn.classList.add('border-blue-500', 'shadow-lg', 'ring-2', 'ring-blue-200');
+        } else {
+          btn.classList.remove('border-blue-500', 'shadow-lg', 'ring-2', 'ring-blue-200');
+        }
+      });
+      tg?.HapticFeedback?.selectionChanged();
+    };
+
+    window.addToCartFromModal = function() {
+      const variants = getFilteredVariants(getProductVariants(currentProduct.name));
+      if (variants.length === 0) {
+        tg?.showAlert?.('❌ Нет доступных вариантов');
+        return;
+      }
+      
+      const cheapest = variants.reduce((min, v) => v.price < min.price ? v : min);
+      tg?.HapticFeedback?.impactOccurred('medium');
+      tg?.showAlert?.(`✅ ${cheapest.name}\n${cheapest.storage} | ${cheapest.color}\n$${cheapest.price}`);
+      tg?.MainButton?.setText('Корзина (1)')?.show();
+      closeModal();
+    };
+
+    // ====== ПРОЧИЕ ФУНКЦИИ ======
+    function setupInfiniteScroll() {
+      const grid = document.getElementById('productGrid');
+      if (!grid) return;
+
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const list = getVisibleProducts();
+            if (loadedCount < list.length) {
+              loadedCount += 10;
+              render();
+              tg?.HapticFeedback?.impactOccurred('light');
+            }
+          }
+        });
+      }, { threshold: 0.1 });
+
+      const lastCard = grid.lastElementChild;
+      if (lastCard) observer.observe(lastCard);
+    }
+
+    function loadImages(products) {
+      products.forEach(product => {
+        const imgs = document.querySelectorAll(`[data-product-name="${escapeHtml(product.name)}"] img[data-src]`);
+        imgs.forEach(img => loadProductImage(img));
+      });
+    }
+
+    function loadProductImage(img) {
+      const src = img.dataset.src;
+      if (!src || imageCache.has(src)) {
+        if (imageCache.has(src)) img.src = imageCache.get(src);
+        img.classList.add('loaded');
+        return;
+      }
+
+      const tempImg = new Image();
+      tempImg.onload = () => {
+        imageCache.set(src, tempImg.src);
+        img.src = tempImg.src;
+        img.classList.add('loaded');
+      };
+      tempImg.onerror = () => {
+        img.src = PLACEHOLDERS['iPhone'];
+        img.classList.add('loaded');
+      };
+      tempImg.src = src;
+    }
+
+    function getVisibleProducts() {
+      if (!productsData) return [];
+      
+      let base = selectedCategory === 'Все' ? 
+        productsData.filter(p => randomIds.includes(p.id)) : 
+        productsData.filter(p => p.cat === selectedCategory);
+      
+      const grouped = {};
+      base.forEach(p => {
+        if (!grouped[p.name] || p.price < grouped[p.name].price) {
+          grouped[p.name] = p;
+        }
+      });
+      
+      if (query.trim()) {
+        const q = query.trim().toLowerCase();
+        return Object.values(grouped).filter(p => 
+          p.name?.toLowerCase().includes(q) || 
+          p.cat?.toLowerCase().includes(q)
+        );
+      }
+      return Object.values(grouped);
+    }
+
     function pickRandomIds(items, count) {
       const ids = items.map(x => x.id);
       for (let i = ids.length - 1; i > 0; i--) {
@@ -293,6 +484,18 @@
       const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'};
       return String(s).replace(/[&<>"']/g, m => map[m]);
     }
+
+    window.addToCart = function(id) {
+      const product = productsData?.find(p => p.id === id);
+      tg?.HapticFeedback?.impactOccurred('medium');
+      tg?.showAlert?.(`✅ ${product?.name || 'Товар'} в корзину!`);
+      tg?.MainButton?.setText('Корзина (1)')?.show();
+    };
+
+    // Закрытие модалки по клику вне её
+    modal?.addEventListener('click', (e) => {
+      if (e.target === modal) closeModal();
+    });
 
     // ====== СТАРТ ======
     initApp();
