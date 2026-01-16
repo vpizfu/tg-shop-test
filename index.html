@@ -28,57 +28,57 @@
     const tg = window.Telegram?.WebApp;
     try { tg?.ready(); tg?.expand(); } catch(e) {}
 
-    // ====== МОЛНИЕНОСНЫЕ PLACEHOLDER'Ы ======
-    const PLACEHOLDERS = {
-      'iPhone': 'https://via.placeholder.com/300x300/007AFF/FFFFFF?text=iPhone&font=700',
-      'iPad': 'https://via.placeholder.com/300x300/34C759/FFFFFF?text=iPad&font=700', 
-      'MacBook': 'https://via.placeholder.com/300x300/FFD60A/000000?text=MacBook&font=700',
-      'Apple Watch': 'https://via.placeholder.com/300x300/AF52DE/FFFFFF?text=Watch&font=700',
-      'AirPods': 'https://via.placeholder.com/300x300/30D158/FFFFFF?text=AirPods&font=700'
-    };
-
+    // ====== 20 ТОВАРОВ ======
     const products = [
-      {id:1, name:'iPhone 15 Pro Max', price:1400, img:'https://images.unsplash.com/photo-1691113485254-72a612c2d8ab?w=300&h=300&fit=crop', cat:'iPhone'},
-      {id:2, name:'iPhone 15 Pro', price:1200, img:'https://images.unsplash.com/photo-1691113484676-7ab5010a5a4c?w=300&h=300&fit=crop', cat:'iPhone'},
-      {id:3, name:'iPhone 15', price:900, img:'https://images.unsplash.com/photo-1693622503037-0a9a5f6f9b3e?w=300&h=300&fit=crop', cat:'iPhone'},
-      {id:4, name:'iPad Pro', price:1300, img:'https://images.unsplash.com/photo-1583354355313-1cd0b3f6680f?w=300&h=300&fit=crop', cat:'iPad'},
-      {id:5, name:'iPad Air', price:700, img:'https://images.unsplash.com/photo-1561154464-82e9adf32761?w=300&h=300&fit=crop', cat:'iPad'},
-      {id:6, name:'MacBook Air', price:1300, img:'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop', cat:'MacBook'},
-      {id:7, name:'MacBook Pro', price:2000, img:'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=300&h=300&fit=crop', cat:'MacBook'},
-      {id:8, name:'Apple Watch Ultra', price:850, img:'https://images.unsplash.com/photo-1579586140626-2882d73086ec?w=300&h=300&fit=crop', cat:'Apple Watch'},
-      {id:9, name:'Apple Watch', price:450, img:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=300&fit=crop', cat:'Apple Watch'},
-      {id:10, name:'AirPods Pro 2', price:280, img:'https://images.unsplash.com/photo-1584822172844-3dd80ee2ed17?w=300&h=300&fit=crop', cat:'AirPods'},
-      {id:11, name:'AirPods', price:150, img:'https://images.unsplash.com/photo-1610945262588-5e9e9fa7b67f?w=300&h=300&fit=crop', cat:'AirPods'}
+      // iPhone (7 товаров)
+      {id:1, name:'iPhone 15 Pro Max 256GB', price:1400, img:'https://images.unsplash.com/photo-1691113485254-72a612c2d8ab?w=300&h=300&fit=crop', cat:'iPhone'},
+      {id:2, name:'iPhone 15 Pro 128GB', price:1200, img:'https://images.unsplash.com/photo-1691113484676-7ab5010a5a4c?w=300&h=300&fit=crop', cat:'iPhone'},
+      {id:3, name:'iPhone 15 128GB', price:900, img:'https://images.unsplash.com/photo-1693622503037-0a9a5f6f9b3e?w=300&h=300&fit=crop', cat:'iPhone'},
+      {id:4, name:'iPhone 14 Pro Max', price:1100, img:'https://images.unsplash.com/photo-1673346009500-0cb12d234c1f?w=300&h=300&fit=crop', cat:'iPhone'},
+      {id:5, name:'iPhone 14 128GB', price:750, img:'https://images.unsplash.com/photo-1646725106931-d3516b65a3a1?w=300&h=300&fit=crop', cat:'iPhone'},
+      {id:6, name:'iPhone 15 Plus', price:1000, img:'https://images.unsplash.com/photo-1691113478371-4a8f9e7d8a8e?w=300&h=300&fit=crop', cat:'iPhone'},
+      
+      // iPad (4 товара)
+      {id:7, name:'iPad Pro 13" M4', price:1300, img:'https://images.unsplash.com/photo-1583354355313-1cd0b3f6680f?w=300&h=300&fit=crop', cat:'iPad'},
+      {id:8, name:'iPad Air 11"', price:700, img:'https://images.unsplash.com/photo-1561154464-82e9adf32761?w=300&h=300&fit=crop', cat:'iPad'},
+      {id:9, name:'iPad 10th Gen', price:450, img:'https://images.unsplash.com/photo-1632661676792-213d7abef1e3?w=300&h=300&fit=crop', cat:'iPad'},
+      
+      // MacBook (3 товара)
+      {id:10, name:'MacBook Air 13" M3', price:1300, img:'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop', cat:'MacBook'},
+      {id:11, name:'MacBook Pro 14" M3', price:2000, img:'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=300&h=300&fit=crop', cat:'MacBook'},
+      
+      // Apple Watch (3 товара)
+      {id:12, name:'Apple Watch Ultra 2', price:850, img:'https://images.unsplash.com/photo-1579586140626-2882d73086ec?w=300&h=300&fit=crop', cat:'Apple Watch'},
+      {id:13, name:'Apple Watch Series 10', price:450, img:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=300&fit=crop', cat:'Apple Watch'},
+      {id:14, name:'Apple Watch SE', price:280, img:'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=300&h=300&fit=crop', cat:'Apple Watch'},
+      
+      // AirPods (3 товара)
+      {id:15, name:'AirPods Pro 2 USB-C', price:280, img:'https://images.unsplash.com/photo-1584822172844-3dd80ee2ed17?w=300&h=300&fit=crop', cat:'AirPods'},
+      {id:16, name:'AirPods 4 ANC', price:180, img:'https://images.unsplash.com/photo-1610945262588-5e9e9fa7b67f?w=300&h=300&fit=crop', cat:'AirPods'},
+      
+      // Дополнительные
+      {id:17, name:'iPhone 15 Pro Max 1TB', price:1700, img:'https://images.unsplash.com/photo-1691113485254-72a612c2d8ab?w=300&h=300&fit=crop', cat:'iPhone'},
+      {id:18, name:'iPad Pro 11"', price:1100, img:'https://images.unsplash.com/photo-1583354355313-1cd0b3f6680f?w=300&h=300&fit=crop', cat:'iPad'},
+      {id:19, name:'MacBook Air 15"', price:1500, img:'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop', cat:'MacBook'},
+      {id:20, name:'Apple Watch Hermès', price:1200, img:'https://images.unsplash.com/photo-1579586140626-2882d73086ec?w=300&h=300&fit=crop', cat:'Apple Watch'}
     ];
 
     const CATEGORIES = ['Все', 'iPhone', 'iPad', 'MacBook', 'Apple Watch', 'AirPods'];
-    let selectedCategory = 'Все', query = '', randomIds = pickRandomIds(products, 8);
+    let selectedCategory = 'Все', query = '', randomIds = pickRandomIds(products, 20), loadedCount = 10, imageCache = new Map();
     const root = document.getElementById('root');
 
-    // ====== КЭШ ИЗОБРАЖЕНИЙ ======
-    const imageCache = new Map();
-    function preloadImage(url, category) {
-      if (imageCache.has(url)) return imageCache.get(url);
-      
-      return new Promise((resolve) => {
-        const img = new Image();
-        img.onload = () => {
-          imageCache.set(url, img.src);
-          resolve(img.src);
-        };
-        img.onerror = () => {
-          // fallback на placeholder
-          const placeholder = PLACEHOLDERS[category] || 'https://via.placeholder.com/300x300/ddd/999?text=No+Image';
-          imageCache.set(url, placeholder);
-          resolve(placeholder);
-        };
-        img.src = url;
-      });
-    }
+    const PLACEHOLDERS = {
+      'iPhone': 'https://via.placeholder.com/300x300/007AFF/FFFFFF?text=iPhone',
+      'iPad': 'https://via.placeholder.com/300x300/34C759/FFFFFF?text=iPad', 
+      'MacBook': 'https://via.placeholder.com/300x300/FFD60A/000000?text=MacBook',
+      'Apple Watch': 'https://via.placeholder.com/300x300/AF52DE/FFFFFF?text=Watch',
+      'AirPods': 'https://via.placeholder.com/300x300/30D158/FFFFFF?text=AirPods'
+    };
 
-    // ====== МОЛНИЕНОСНЫЙ РЕНДЕР ======
+    // ====== ОСНОВНОЙ РЕНДЕР ======
     function render() {
       const list = getVisibleProducts();
+      const showCount = Math.min(loadedCount, list.length);
       
       root.innerHTML = `
         <div class="mb-5">
@@ -86,14 +86,9 @@
           <div class="flex items-center gap-3">
             <div class="flex-1 bg-white rounded-2xl shadow px-3 py-2">
               <label class="text-xs text-gray-500 block mb-1">Категория</label>
-              <div class="flex items-center gap-2">
-                <select id="category" class="w-full bg-transparent border-none font-semibold text-base focus:outline-none appearance-none">
-                  ${CATEGORIES.map(c => `<option value="${c}" ${c===selectedCategory?'selected':''}>${c}</option>`).join('')}
-                </select>
-                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-              </div>
+              <select id="category" class="w-full bg-transparent border-none font-semibold text-base focus:outline-none appearance-none">
+                ${CATEGORIES.map(c => `<option value="${c}" ${c===selectedCategory?'selected':''}>${c}</option>`).join('')}
+              </select>
             </div>
             <div class="w-44 bg-white rounded-2xl shadow px-3 py-2">
               <label class="text-xs text-gray-500 block mb-1">Поиск</label>
@@ -106,29 +101,33 @@
             </div>
           </div>
           <div class="mt-3 flex items-center justify-between">
-            <div class="text-xs text-gray-500">Показано: <span class="font-semibold">${list.length}</span></div>
-            <button id="refresh" class="text-sm font-semibold px-3 py-2 rounded-xl bg-white shadow">Обновить</button>
+            <div class="text-xs text-gray-500">
+              Показано: <span class="font-semibold">${showCount}</span> из ${list.length}
+            </div>
+            ${loadedCount < list.length ? 
+              `<button id="loadMore" class="text-sm font-semibold px-4 py-2 rounded-xl bg-blue-500 text-white shadow-lg">Показать ещё</button>` : 
+              `<div class="text-xs text-gray-500">Все товары загружены</div>`
+            }
           </div>
         </div>
-        <div class="grid grid-cols-2 gap-4">${list.map(p => productCard(p)).join('')}</div>
+        <div class="grid grid-cols-2 gap-4" id="productGrid">
+          ${list.slice(0, showCount).map(p => productCard(p)).join('')}
+        </div>
       `;
 
-      // handlers
       setupHandlers();
-      
-      // ⚡ Асинхронно загружаем картинки
-      list.forEach(product => {
-        const imgElement = document.querySelector(`[data-product-id="${product.id}"]`);
-        if (imgElement) loadProductImage(imgElement, product);
-      });
+      loadImages(list.slice(0, showCount));
     }
 
+    // ====== КАРТОЧКА ТОВАРА ======
     function productCard(product) {
       const placeholder = PLACEHOLDERS[product.cat] || 'https://via.placeholder.com/300x300/ddd/999?text=?';
       return `
-        <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group cursor-pointer" onclick="addToCart(${product.id})" data-product-id="${product.id}">
-          <div class="w-full h-32 rounded-xl object-cover mb-3 group-hover:scale-105 transition-transform placeholder-shimmer bg-gray-200 flex items-center justify-center">
-            <img src="${placeholder}" class="w-full h-32 rounded-xl object-cover opacity-0 placeholder-shimmer" data-src="${product.img}" />
+        <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group cursor-pointer" 
+             onclick="addToCart(${product.id})" data-product-id="${product.id}">
+          <div class="w-full h-32 rounded-xl mb-3 group-hover:scale-105 transition-transform placeholder-shimmer bg-gray-200 flex items-center justify-center relative overflow-hidden">
+            <img src="${placeholder}" class="w-full h-32 rounded-xl object-cover absolute inset-0 opacity-0" 
+                 data-src="${product.img}" data-product-id="${product.id}" />
           </div>
           <div class="font-bold text-base mb-1 truncate">${escapeHtml(product.name)}</div>
           <div class="text-blue-600 font-black text-xl mb-3">$${product.price}</div>
@@ -143,43 +142,37 @@
       `;
     }
 
-    async function loadProductImage(imgElement, product) {
-      const realSrc = imgElement.dataset.src;
-      try {
-        const cachedSrc = await preloadImage(realSrc, product.cat);
-        imgElement.src = cachedSrc;
-        imgElement.classList.remove('opacity-0');
-        imgElement.classList.add('loaded');
-        imgElement.parentElement.classList.remove('placeholder-shimmer');
-      } catch(e) {
-        console.log('Image load failed:', realSrc);
-      }
-    }
-
+    // ====== ОБРАБОТЧИКИ ======
     function setupHandlers() {
       document.getElementById('category').addEventListener('change', (e) => {
         selectedCategory = e.target.value;
-        if (selectedCategory === 'Все') randomIds = pickRandomIds(products, 8);
+        loadedCount = 10;
+        if (selectedCategory === 'Все') randomIds = pickRandomIds(products, 20);
         render();
       });
 
       document.getElementById('search').addEventListener('input', (e) => {
         query = e.target.value || '';
+        loadedCount = 10;
         render();
       });
 
-      document.getElementById('refresh').addEventListener('click', () => {
-        if (selectedCategory === 'Все') randomIds = pickRandomIds(products, 8);
-        if (tg?.HapticFeedback) tg.HapticFeedback.impactOccurred('light');
-        render();
-      });
+      const loadMoreBtn = document.getElementById('loadMore');
+      if (loadMoreBtn) {
+        loadMoreBtn.addEventListener('click', () => {
+          loadedCount += 10;
+          tg?.HapticFeedback?.impactOccurred('light');
+          render();
+        });
+      }
     }
 
-    // остальная логика без изменений
+    // ====== ЛОГИКА ПОДГРУЗКИ ======
     function getVisibleProducts() {
       let base = selectedCategory === 'Все' ? 
         products.filter(p => randomIds.includes(p.id)) : 
         products.filter(p => p.cat === selectedCategory);
+      
       if (query.trim()) {
         const q = query.trim().toLowerCase();
         base = base.filter(p => p.name.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q));
@@ -187,6 +180,44 @@
       return base;
     }
 
+    async function loadImages(products) {
+      products.forEach(product => {
+        const imgElement = document.querySelector(`img[data-product-id="${product.id}"]`);
+        if (imgElement && !imgElement.src.includes(imgElement.dataset.src)) {
+          setTimeout(() => loadProductImage(imgElement, product), 100);
+        }
+      });
+    }
+
+    async function loadProductImage(imgElement, product) {
+      const realSrc = imgElement.dataset.src;
+      if (imageCache.has(realSrc)) {
+        imgElement.src = imageCache.get(realSrc);
+        imgElement.classList.remove('opacity-0');
+        imgElement.closest('.placeholder-shimmer')?.classList.remove('placeholder-shimmer');
+        return;
+      }
+
+      try {
+        const img = new Image();
+        img.onload = () => {
+          imageCache.set(realSrc, img.src);
+          imgElement.src = img.src;
+          imgElement.classList.remove('opacity-0');
+          imgElement.classList.add('loaded');
+          imgElement.closest('.placeholder-shimmer')?.classList.remove('placeholder-shimmer');
+        };
+        img.onerror = () => {
+          const placeholder = PLACEHOLDERS[product.cat];
+          imageCache.set(realSrc, placeholder);
+          imgElement.src = placeholder;
+          imgElement.classList.remove('opacity-0');
+        };
+        img.src = realSrc;
+      } catch(e) {}
+    }
+
+    // ====== HELPERS ======
     function pickRandomIds(items, count) {
       const ids = items.map(x => x.id);
       for (let i = ids.length - 1; i > 0; i--) {
@@ -208,9 +239,7 @@
     }
     window.addToCart = addToCart;
 
-    // ⚡ СРАЗУ РЕНДЕРИМ
     render();
   </script>
 </body>
 </html>
-
