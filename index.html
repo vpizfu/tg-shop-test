@@ -37,24 +37,24 @@
       padding-bottom: 5rem;
     }
 
-    /* Карусель изображений */
+    /* Карусель изображений - ЕДИНСТВЕННЫЙ СТИЛЬ ДЛЯ ВСЕХ */
     .image-carousel {
       position: relative;
       overflow: hidden;
-      height: 128px;
       border-radius: 12px;
     }
+    .image-carousel.h-32 { height: 128px; }
+    .image-carousel.h-64 { height: 260px; }
     .image-carousel-inner {
       display: flex;
-      transition: transform 0.3s ease;
       height: 100%;
+      transition: transform 0.3s ease;
     }
     .carousel-img {
       width: 100%;
       height: 100%;
       object-fit: cover;
       flex-shrink: 0;
-      max-width: 100%;
     }
 
     /* Кнопки навигации */
@@ -101,7 +101,7 @@
     }
     .dot.active { background: #3B82F6; }
 
-    /* Секвенициальный выбор опций */
+    /* Секвенициальный выбор опций - БЕЗ СТРЕЛОЧКИ */
     .option-section {
       transition: all 0.3s ease;
     }
@@ -112,18 +112,6 @@
     .option-section.unlocked {
       opacity: 1;
       pointer-events: auto;
-    }
-    .option-section.current::before {
-      content: "➤";
-      position: absolute;
-      left: -24px;
-      top: 0;
-      font-size: 18px;
-      animation: pulse 2s infinite;
-    }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.5; }
     }
 
     /* Скролл опций */
@@ -136,20 +124,6 @@
     }
     .scroll-carousel::-webkit-scrollbar { display: none; }
     .scroll-item { scroll-snap-align: start; flex-shrink: 0; }
-
-    /* Модальная карусель */
-    #modalCarousel {
-      height: 260px !important;
-      margin: 12px 0;
-      border-radius: 24px;
-      position: relative;
-      cursor: pointer;
-    }
-    #modalCarousel .carousel-img { 
-      border-radius: 24px;
-      object-fit: contain;
-      max-height: 100%;
-    }
 
     /* Fullscreen модалка */
     #fullscreenModal {
@@ -172,7 +146,14 @@
       opacity: 1;
       visibility: visible;
     }
-    #fullscreenModal .carousel-img {
+    #fullscreenCarousel {
+      width: 100%;
+      height: 100%;
+      flex-shrink: 0;
+    }
+    #fullscreenCarousel .carousel-img {
+      width: 100%;
+      height: 100%;
       max-width: 95vw;
       max-height: 95vh;
       object-fit: contain;
@@ -214,9 +195,9 @@
     }
 
     .modal-image-section {
-      padding: 0 24px 20px;
+      padding: 16px 24px 0;
       border-bottom: 1px solid #e5e7eb;
-      margin-bottom: 8px;
+      margin-bottom: 12px;
     }
 
     .no-images {
@@ -226,7 +207,7 @@
       justify-content: center;
       height: 100%;
       background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      border-radius: 24px;
+      border-radius: 12px;
       color: #64748b;
     }
     .no-images svg {
@@ -257,7 +238,7 @@
   <!-- Fullscreen модалка для картинок -->
   <div id="fullscreenModal">
     <div style="position: relative; width: 100%; height: 100%;">
-      <div id="fullscreenCarousel" class="flex h-full" style="transition: transform 0.3s ease;"></div>
+      <div id="fullscreenCarousel" class="flex" style="transition: transform 0.3s ease;"></div>
       <button class="fullscreen-nav fullscreen-prev" onclick="fullscreenPrev()">‹</button>
       <button class="fullscreen-nav fullscreen-next" onclick="fullscreenNext()">›</button>
       <button class="fullscreen-close" onclick="closeFullscreen()">×</button>
@@ -281,8 +262,9 @@
         selectedOption = {}, 
         searchTimeout = null;
 
-    // Fullscreen переменные
+    // Карусели
     let fullscreenImages = [], fullscreenCurrentIndex = 0;
+    let modalCurrentIndex = 0, modalImageCount = 0;
 
     const root = document.getElementById('root');
     const modal = document.getElementById('productModal');
@@ -298,7 +280,7 @@
 
     const FILTER_ORDER = ['simType', 'storage', 'color', 'region'];
 
-    // Запрет жестов зума
+    // Запрет зума
     document.addEventListener('gesturestart', e => e.preventDefault());
     document.addEventListener('gesturechange', e => e.preventDefault());
     document.addEventListener('gestureend', e => e.preventDefault());
@@ -311,7 +293,7 @@
     }, { passive: false });
 
     function getProductVariants(productName) {
-      return productsData.filter(p => p.name === productName);
+      return productsData ? productsData.filter(p => p.name === productName) : [];
     }
 
     function getFilteredProductImages(variants) {
@@ -468,20 +450,21 @@
       const allImages = getFilteredProductImages(variants);
       const images = allImages.length > 0 ? allImages.slice(0, 3) : [PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone']];
       const cheapestVariant = variants.reduce((min, p) => p.price < min.price ? p : min, variants[0]);
-      const carouselId = `carousel_${product.name}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const carouselId = `carousel_${Math.random().toString(36).substr(2, 9)}`;
 
       return `
         <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group cursor-pointer relative"
              data-product-name="${escapeHtml(product.name)}" data-carousel-id="${carouselId}">
-          <div class="w-full h-32 rounded-xl mb-3 image-carousel group-hover:scale-105 transition-transform">
-            <div class="image-carousel-inner" data-current="0">
-              ${images.map((img, idx) => `<img src="${img}" class="carousel-img ${idx===0?'loaded':''}" data-real-src="${img}" alt="Product ${idx+1}" />`).join('')}
+          <div class="w-full h-32 rounded-xl mb-3 image-carousel h-32 group-hover:scale-105 transition-transform cursor-pointer" 
+               onclick="openProductFullscreen('${carouselId}')">
+            <div class="image-carousel-inner" data-carousel="${carouselId}" data-current="0">
+              ${images.map((img, idx) => `<img src="${img}" class="carousel-img ${idx===0?'loaded':''}" alt="Product ${idx+1}" />`).join('')}
             </div>
             ${images.length > 1 ? `
-              <button class="nav-btn nav-prev" onclick="prevImage('${carouselId}')">‹</button>
-              <button class="nav-btn nav-next" onclick="nextImage('${carouselId}')">›</button>
+              <button class="nav-btn nav-prev" onclick="carouselPrev('${carouselId}'); event.stopPropagation()">‹</button>
+              <button class="nav-btn nav-next" onclick="carouselNext('${carouselId}'); event.stopPropagation()">›</button>
               <div class="carousel-dots">
-                ${images.map((_, idx) => `<div class="dot ${idx===0?'active':''}" data-go="${idx}"></div>`).join('')}
+                ${images.map((_, idx) => `<div class="dot ${idx===0?'active':''}" onclick="carouselGoTo('${carouselId}', ${idx}); event.stopPropagation()"></div>`).join('')}
               </div>
             ` : ''}
           </div>
@@ -509,61 +492,35 @@
       }
       
       renderProductModal(currentProduct);
-      
-      setTimeout(() => {
-        const currentSection = document.querySelector(`[data-section="${type}"]`);
-        if (currentSection) {
-          currentSection.scrollIntoViewIfNeeded({ 
-            behavior: 'smooth', 
-            block: 'nearest',
-            inline: 'nearest'
-          });
-        }
-      }, 100);
-      
       tg?.HapticFeedback?.impactOccurred('light');
     }
 
-    function preloadAllImages(products) {
-      products.forEach(product => {
-        const variants = getProductVariants(product.name);
-        const allImages = getFilteredProductImages(variants);
-        allImages.forEach(imgSrc => {
-          if (!imageCache.has(imgSrc) && imgSrc) {
-            const img = new Image();
-            img.onload = () => imageCache.set(imgSrc, true);
-            img.onerror = () => imageCache.set(imgSrc, false);
-            img.src = imgSrc;
-          }
-        });
-      });
-    }
-
     function setupImageCarousels() {
-      document.querySelectorAll('.image-carousel').forEach(carousel => {
+      document.querySelectorAll('.image-carousel[data-carousel]').forEach(carousel => {
         const inner = carousel.querySelector('.image-carousel-inner');
         const dots = carousel.querySelectorAll('.dot');
-        const id = inner.parentElement.parentElement.dataset.carouselId;
+        const carouselId = inner.dataset.carousel;
         let currentIndex = 0;
 
         function updateCarousel() {
           inner.style.transform = `translateX(-${currentIndex * 100}%)`;
           dots.forEach((dot, idx) => dot.classList.toggle('active', idx === currentIndex));
-          const nextImg = inner.querySelectorAll('.carousel-img')[currentIndex];
-          if (nextImg && !nextImg.complete && nextImg.dataset.realSrc) {
-            nextImg.src = nextImg.dataset.realSrc;
-            nextImg.classList.add('loaded');
-          }
         }
 
-        window[`nextImage_${id}`] = () => {
+        window[`carouselNext_${carouselId}`] = () => {
           currentIndex = (currentIndex + 1) % inner.children.length;
           updateCarousel();
           tg?.HapticFeedback?.selectionChanged();
         };
 
-        window[`prevImage_${id}`] = () => {
+        window[`carouselPrev_${carouselId}`] = () => {
           currentIndex = currentIndex === 0 ? inner.children.length - 1 : currentIndex - 1;
+          updateCarousel();
+          tg?.HapticFeedback?.selectionChanged();
+        };
+
+        window[`carouselGoTo_${carouselId}`] = (index) => {
+          currentIndex = index;
           updateCarousel();
           tg?.HapticFeedback?.selectionChanged();
         };
@@ -580,8 +537,16 @@
       });
     }
 
-    window.nextImage = id => window[`nextImage_${id}`]?.();
-    window.prevImage = id => window[`prevImage_${id}`]?.();
+    window.carouselNext = id => window[`carouselNext_${id}`]?.();
+    window.carouselPrev = id => window[`carouselPrev_${id}`]?.();
+    window.carouselGoTo = (id, index) => window[`carouselGoTo_${id}`]?.(index);
+
+    function openProductFullscreen(carouselId) {
+      const carousel = document.querySelector(`[data-carousel="${carouselId}"] .image-carousel-inner`);
+      if (!carousel) return;
+      const images = Array.from(carousel.querySelectorAll('.carousel-img')).map(img => img.src);
+      openFullscreen(images);
+    }
 
     function setupHandlers() {
       const categoryEl = document.getElementById('category');
@@ -609,7 +574,7 @@
 
       document.querySelectorAll('[data-product-name]').forEach(card => {
         card.onclick = (e) => {
-          if (e.target.closest('svg') || e.target.closest('button') || e.target.closest('.dot')) return;
+          if (e.target.closest('button') || e.target.closest('.dot')) return;
           const productName = card.dataset.productName;
           const product = productsData.find(p => p.name === productName);
           if (product) {
@@ -640,13 +605,12 @@
       currentProduct = product;
       const variants = getProductVariants(product.name);
       const filteredVariants = getFilteredVariants(variants);
-
       const availableOptions = {};
+      
       FILTER_ORDER.forEach(type => { 
         availableOptions[type] = getAvailableOptions(type, variants); 
       });
 
-      const currentSectionIndex = getCurrentSectionIndex();
       const complete = isCompleteSelection();
       const filteredImages = complete ? getFilteredProductImages(filteredVariants) : [];
 
@@ -669,25 +633,24 @@
 
           <div class="flex-1 overflow-hidden">
             <div class="modal-image-section">
-              <div class="h-64 bg-gray-100 relative mb-6 rounded-2xl overflow-hidden image-carousel cursor-pointer" 
+              <div class="w-full h-64 image-carousel h-64 rounded-xl overflow-hidden cursor-pointer mb-6" 
                    id="modalCarousel" 
-                   onclick="openFullscreen(${JSON.stringify(filteredImages)})"
-                   ${complete && filteredImages.length > 0 ? '' : 'style="cursor: default;"'}>
+                   ${complete && filteredImages.length > 0 ? `onclick="openFullscreenModal()"` : 'style="cursor: default;"'}>
                 ${complete && filteredImages.length > 0 ? `
                   <div class="image-carousel-inner" id="modalCarouselInner">
                     ${filteredImages.slice(0, 10).map(img => `<img src="${img}" class="carousel-img loaded" alt="Product image" loading="lazy" />`).join('')}
                   </div>
                   ${filteredImages.length > 1 ? `
-                    <button class="nav-btn nav-prev" onclick="event.stopPropagation(); modalPrevImage()">‹</button>
-                    <button class="nav-btn nav-next" onclick="event.stopPropagation(); modalNextImage()">›</button>
+                    <button class="nav-btn nav-prev" onclick="modalPrev(); event.stopPropagation()">‹</button>
+                    <button class="nav-btn nav-next" onclick="modalNext(); event.stopPropagation()">›</button>
                     <div class="carousel-dots" id="modalDots">
-                      ${Array(Math.min(filteredImages.length, 10)).fill().map((_, idx) =>
-                        `<div class="dot ${idx === 0 ? 'active' : ''}" onclick="event.stopPropagation(); modalGoToImage(${idx})"></div>`
+                      ${Array(filteredImages.length).fill().map((_, idx) => 
+                        `<div class="dot ${idx === 0 ? 'active' : ''}" onclick="modalGoTo(${idx}); event.stopPropagation()"></div>`
                       ).join('')}
                     </div>
                   ` : ''}
                 ` : `
-                  <div class="no-images">
+                  <div class="no-images h-64">
                     <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
@@ -701,15 +664,14 @@
 
           <div class="p-6 space-y-4 overflow-y-auto max-h-80">
             ${FILTER_ORDER.map((type, index) => {
-              const isLocked = index > currentSectionIndex;
-              const isCurrent = index === currentSectionIndex;
+              const isLocked = index > getCurrentSectionIndex();
               return `
-                <div class="relative option-section ${isLocked ? 'locked' : 'unlocked'} ${isCurrent ? 'current' : ''}" data-section="${type}">
+                <div class="option-section ${isLocked ? 'locked' : 'unlocked'}" data-section="${type}">
                   <label class="text-sm font-semibold text-gray-700 capitalize mb-2 block">${getLabel(type)}</label>
                   <div class="flex gap-2 scroll-carousel pb-1">
                     ${availableOptions[type].map(option => `
                       <button class="option-btn px-3 py-1.5 text-xs font-medium rounded-full border scroll-item w-[80px]
-                              ${selectedOption[type] === option ? 'bg-blue-500 text-white border-blue-500 shadow-md' : 'bg-gray-100 border-gray-300 hover:bg-gray-200'}
+                              ${selectedOption[type] === option ? 'bg-blue-500 text-white border-blue-500 shadow-md font-bold' : 'bg-gray-100 border-gray-300 hover:bg-gray-200'}
                               transition-all"
                               data-type="${type}"
                               data-option="${escapeHtml(option)}"
@@ -744,12 +706,12 @@
       `;
 
       if (complete && filteredImages.length > 0) {
-        initModalCarousel(Math.min(filteredImages.length, 10));
+        initModalCarousel(filteredImages.length);
       }
     }
 
     // Fullscreen функции
-    window.openFullscreen = (images) => {
+    function openFullscreen(images) {
       if (!images || images.length === 0) return;
       fullscreenImages = images;
       fullscreenCurrentIndex = 0;
@@ -757,13 +719,18 @@
       fullscreenModal.classList.add('active');
       document.body.style.overflow = 'hidden';
       tg?.expand();
+    }
+
+    window.openFullscreenModal = () => {
+      const images = Array.from(document.querySelectorAll('#modalCarouselInner .carousel-img')).map(img => img.src);
+      openFullscreen(images);
     };
 
     function updateFullscreenCarousel() {
       const container = document.getElementById('fullscreenCarousel');
-      container.innerHTML = `
-        ${fullscreenImages.map(img => `<img src="${img}" class="carousel-img" alt="Fullscreen image" loading="lazy" />`).join('')}
-      `;
+      container.innerHTML = fullscreenImages.map(img => 
+        `<img src="${img}" class="carousel-img" alt="Fullscreen image" loading="lazy" />`
+      ).join('');
       container.style.transform = `translateX(-${fullscreenCurrentIndex * 100}%)`;
     }
 
@@ -785,41 +752,38 @@
     };
 
     // Модальная карусель
-    let modalCurrentIndex = 0;
-    let modalImageCount = 0;
-    
     function initModalCarousel(imageCount) {
       if (imageCount <= 1) return;
       modalImageCount = imageCount;
       const inner = document.getElementById('modalCarouselInner');
       if (!inner) return;
 
-      function updateCarousel() {
+      function updateModalCarousel() {
         inner.style.transform = `translateX(-${modalCurrentIndex * 100}%)`;
         document.querySelectorAll('#modalDots .dot').forEach((dot, idx) => {
           dot.classList.toggle('active', idx === modalCurrentIndex);
         });
       }
 
-      window.modalNextImage = () => { 
+      window.modalNext = () => { 
         modalCurrentIndex = (modalCurrentIndex + 1) % modalImageCount; 
-        updateCarousel(); 
+        updateModalCarousel(); 
         tg?.HapticFeedback?.selectionChanged();
       };
       
-      window.modalPrevImage = () => { 
+      window.modalPrev = () => { 
         modalCurrentIndex = modalCurrentIndex === 0 ? modalImageCount - 1 : modalCurrentIndex - 1; 
-        updateCarousel(); 
+        updateModalCarousel(); 
         tg?.HapticFeedback?.selectionChanged();
       };
       
-      window.modalGoToImage = (i) => { 
+      window.modalGoTo = (i) => { 
         modalCurrentIndex = i; 
-        updateCarousel(); 
+        updateModalCarousel(); 
         tg?.HapticFeedback?.selectionChanged();
       };
 
-      updateCarousel();
+      updateModalCarousel();
     }
 
     function clearOptionNoFocus(type) {
@@ -827,12 +791,6 @@
       const typeIndex = FILTER_ORDER.indexOf(type);
       for (let i = typeIndex; i < FILTER_ORDER.length; i++) delete selectedOption[FILTER_ORDER[i]];
       renderProductModal(currentProduct);
-      setTimeout(() => {
-        const currentSection = document.querySelector(`[data-section="${type}"]`);
-        if (currentSection) {
-          currentSection.scrollIntoViewIfNeeded({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
-        }
-      }, 100);
       tg?.HapticFeedback?.impactOccurred('light');
     }
 
@@ -884,6 +842,21 @@
         [ids[i], ids[j]] = [ids[j], ids[i]];
       }
       return ids.slice(0, Math.min(count, ids.length));
+    }
+
+    function preloadAllImages(products) {
+      products.forEach(product => {
+        const variants = getProductVariants(product.name);
+        const allImages = getFilteredProductImages(variants);
+        allImages.forEach(imgSrc => {
+          if (!imageCache.has(imgSrc) && imgSrc) {
+            const img = new Image();
+            img.onload = () => imageCache.set(imgSrc, true);
+            img.onerror = () => imageCache.set(imgSrc, false);
+            img.src = imgSrc;
+          }
+        });
+      });
     }
 
     function escapeHtml(s) {
