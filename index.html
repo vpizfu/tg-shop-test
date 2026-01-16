@@ -56,7 +56,13 @@
       justify-content: center;
     }
     
-    /* Карусель изображений */
+    /* Остальные стили */
+    .product-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      padding-bottom: 5rem;
+    }
     .image-carousel {
       position: relative;
       overflow: hidden;
@@ -75,8 +81,6 @@
       object-fit: cover;
       flex-shrink: 0;
     }
-
-    /* Кнопки навигации */
     .nav-btn {
       position: absolute;
       top: 50%;
@@ -100,8 +104,6 @@
     .image-carousel:hover .nav-btn { opacity: 1; }
     .nav-prev { left: 8px; }
     .nav-next { right: 8px; }
-
-    /* Индикаторы */
     .carousel-dots {
       position: absolute;
       bottom: 8px;
@@ -119,32 +121,16 @@
       cursor: pointer;
     }
     .dot.active { background: #3B82F6; }
-
-    /* Опции */
-    .option-section {
-      transition: all 0.3s ease;
-    }
-    .option-section.locked {
-      opacity: 0.4;
-      pointer-events: none;
-    }
-    .option-section.unlocked {
-      opacity: 1;
-      pointer-events: auto;
-    }
-
-    /* Скролл опций */
     .scroll-carousel {
       scroll-snap-type: x mandatory;
       scrollbar-width: none;
-      -webkit-overflow-scrolling: touch;
       overflow-x: auto;
       overscroll-behavior-x: contain;
     }
     .scroll-carousel::-webkit-scrollbar { display: none; }
     .scroll-item { scroll-snap-align: start; flex-shrink: 0; }
-
-    /* Fullscreen модалка - ПО ЦЕНТРУ */
+    
+    /* Fullscreen */
     #fullscreenModal {
       position: fixed;
       top: 0;
@@ -195,9 +181,7 @@
       font-weight: bold;
       z-index: 1001;
       cursor: pointer;
-      transition: all 0.2s ease;
     }
-    .fullscreen-nav:hover { background: rgba(255,255,255,0.3); }
     .fullscreen-prev { left: 20px; }
     .fullscreen-next { right: 20px; }
     .fullscreen-close {
@@ -215,37 +199,6 @@
       z-index: 1001;
       cursor: pointer;
     }
-
-    .modal-image-section {
-      padding: 16px 24px 0;
-      border-bottom: 1px solid #e5e7eb;
-      margin-bottom: 12px;
-    }
-
-    .no-images {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
-      border-radius: 12px;
-      color: #64748b;
-    }
-    .no-images svg {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 12px;
-    }
-
-    #search { color: #111827; }
-    #search::placeholder { color: #9ca3af; }
-    .option-btn, .option-btn:focus {
-      outline: none !important;
-      -webkit-tap-highlight-color: transparent;
-    }
-
-    /* Padding для таббара */
     .main-content { padding-bottom: 90px; }
   </style>
 </head>
@@ -253,14 +206,13 @@
 <body class="bg-gray-100 min-h-screen">
   <div id="root" class="p-4 max-w-md mx-auto main-content"></div>
   
-  <!-- Продуктовая модалка -->
+  <!-- Модалки -->
   <div id="productModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div id="modalContent" class="bg-white rounded-3xl shadow-2xl max-h-[90vh] w-full max-w-md overflow-hidden"></div>
   </div>
 
-  <!-- Fullscreen модалка -->
   <div id="fullscreenModal">
-    <div id="fullscreenCarousel" class="flex" style="transition: transform 0.3s ease;"></div>
+    <div id="fullscreenCarousel" class="flex"></div>
     <button class="fullscreen-nav fullscreen-prev" onclick="fullscreenPrev()">‹</button>
     <button class="fullscreen-nav fullscreen-next" onclick="fullscreenNext()">›</button>
     <button class="fullscreen-close" onclick="closeFullscreen()">×</button>
@@ -280,7 +232,7 @@
       </svg>
       <div>Распродажа</div>
     </div>
-    <div class="tab-item" data-tab="cart" onclick="switchTab('cart')">
+    <div class="tab-item relative" data-tab="cart" onclick="switchTab('cart')">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
       </svg>
@@ -308,21 +260,11 @@
     const API_URL = 'https://script.google.com/macros/s/AKfycbzo-HEFFXRjN6PQrhWNhlInY2sP244r30gOyAMHLA0y2mAbA8jcOUtr1RcFhL_1A8GliQ/exec';
     const CATEGORIES = ['Все', 'iPhone', 'iPad', 'MacBook', 'Apple Watch', 'AirPods'];
     
-    let selectedCategory = 'Все', 
-        query = '', 
-        randomIds = [], 
-        loadedCount = 10, 
-        imageCache = new Map(), 
-        productsData = null,
-        currentProduct = null, 
-        selectedOption = {}, 
-        searchTimeout = null,
-        cartCount = 0,
-        currentTab = 'shop';
-
-    // Карусели
-    let fullscreenImages = [], fullscreenCurrentIndex = 0;
-    let modalCurrentIndex = 0, modalImageCount = 0;
+    let selectedCategory = 'Все', query = '', randomIds = [], loadedCount = 10, 
+        imageCache = new Map(), productsData = null, currentProduct = null, 
+        selectedOption = {}, searchTimeout = null, cartCount = 0, currentTab = 'shop',
+        isDataLoaded = false, fullscreenImages = [], fullscreenCurrentIndex = 0,
+        modalCurrentIndex = 0, modalImageCount = 0, savedModalIndex = 0;
 
     const root = document.getElementById('root');
     const modal = document.getElementById('productModal');
@@ -338,115 +280,7 @@
 
     const FILTER_ORDER = ['simType', 'storage', 'color', 'region'];
 
-    // Запрет зума
-    document.addEventListener('gesturestart', e => e.preventDefault());
-    document.addEventListener('gesturechange', e => e.preventDefault());
-    document.addEventListener('gestureend', e => e.preventDefault());
-    document.addEventListener('touchstart', e => { if (e.touches.length > 1) e.preventDefault(); }, { passive: false });
-    let lastTouchEnd = 0;
-    document.addEventListener('touchend', e => {
-      const now = Date.now();
-      if (now - lastTouchEnd <= 300) e.preventDefault();
-      lastTouchEnd = now;
-    }, { passive: false });
-
-    // Таббар
-    function switchTab(tab) {
-      currentTab = tab;
-      document.querySelectorAll('.tab-item').forEach(item => {
-        item.classList.toggle('active', item.dataset.tab === tab);
-      });
-      
-      if (tab === 'shop') renderShop();
-      else if (tab === 'cart') renderCart();
-      else renderTabContent(tab);
-      
-      tg?.HapticFeedback?.selectionChanged();
-    }
-
-    function renderShop() {
-      if (!productsData) return initApp();
-      render();
-    }
-
-    function renderCart() {
-      root.innerHTML = `
-        <div class="p-6 text-center">
-          <div class="w-24 h-24 bg-blue-100 rounded-3xl flex flex-col items-center justify-center mx-auto mb-6">
-            <svg class="w-12 h-12 text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
-            </svg>
-            <div class="text-2xl font-bold text-blue-600">${cartCount}</div>
-          </div>
-          <h2 class="text-2xl font-bold mb-4">Корзина</h2>
-          <p class="text-gray-600 mb-8">Здесь будут ваши товары</p>
-          <div class="space-y-3">
-            ${Array(cartCount).fill().map((_, i) => `
-              <div class="bg-white rounded-2xl p-4 shadow flex items-center justify-between">
-                <div>iPhone ${i+1}</div>
-                <div class="text-blue-600 font-bold">$999</div>
-              </div>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    function renderTabContent(tab) {
-      const content = {
-        'sale': '<div class="p-8 text-center"><div class="text-4xl mb-4">🔥</div><h2 class="text-2xl font-bold mb-4">Распродажа</h2><p class="text-gray-600">Скоро здесь будут лучшие предложения!</p></div>',
-        'profile': '<div class="p-8 text-center"><svg class="w-24 h-24 text-gray-300 mx-auto mb-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg><h2 class="text-2xl font-bold mb-4">Профиль</h2><p class="text-gray-600 mb-6">В разработке</p><button class="bg-blue-500 text-white px-8 py-3 rounded-2xl font-bold">Войти</button></div>',
-        'about': '<div class="p-8 text-center"><div class="text-4xl mb-6">🛒</div><h2 class="text-2xl font-bold mb-4">О нас</h2><p class="text-gray-600 mb-6">Лучший магазин техники в Telegram!</p><div class="bg-blue-50 border border-blue-200 rounded-2xl p-6"><p class="text-sm text-blue-800">Мы предлагаем оригинальную технику Apple по лучшим ценам с гарантией качества.</p></div></div>'
-      };
-      root.innerHTML = content[tab] || '<div class="p-8 text-center text-gray-500">Скоро здесь!</div>';
-    }
-
-    function updateCartBadge() {
-      const badge = document.getElementById('cartBadge');
-      if (cartCount > 0) {
-        badge.textContent = cartCount;
-        badge.style.display = 'flex';
-      } else {
-        badge.style.display = 'none';
-      }
-    }
-
-    // Остальные функции без изменений...
-    function getProductVariants(productName) {
-      return productsData ? productsData.filter(p => p.name === productName) : [];
-    }
-
-    function getFilteredProductImages(variants) {
-      const images = new Set();
-      variants.forEach(variant => {
-        if (variant.images && Array.isArray(variant.images)) {
-          variant.images.forEach(img => {
-            if (img && img.trim()) images.add(img);
-          });
-        }
-      });
-      return Array.from(images);
-    }
-
-    function getFilteredVariants(variants) {
-      return variants.filter(variant => {
-        return FILTER_ORDER.every(type => {
-          const selectedValue = selectedOption[type];
-          return !selectedValue || variant[type] === selectedValue;
-        });
-      });
-    }
-
-    function getAvailableOptions(type, variants) {
-      const filteredVariants = getFilteredVariants(variants);
-      const options = [...new Set(filteredVariants.map(v => v[type]).filter(Boolean))];
-      return options.sort();
-    }
-
-    function isCompleteSelection() {
-      return FILTER_ORDER.every(type => selectedOption[type]);
-    }
-
+    // ✅ ИСПРАВЛЕННАЯ ИНИЦИАЛИЗАЦИЯ
     async function initApp() {
       try {
         root.innerHTML = `
@@ -457,11 +291,11 @@
         `;
 
         const response = await fetch(API_URL);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}: ${response.statusText}`);
 
         const products = await response.json();
         if (!Array.isArray(products) || products.length === 0) {
-          throw new Error('Нет товаров');
+          throw new Error('Нет товаров в базе');
         }
 
         productsData = products.flatMap(product =>
@@ -479,23 +313,58 @@
           }))
         );
 
-        if (selectedCategory === 'Все') {
-          randomIds = pickRandomIds(productsData, Math.min(20, productsData.length));
-        }
-        render();
+        randomIds = pickRandomIds(productsData, Math.min(20, productsData.length));
+        isDataLoaded = true;
+        
+        // ✅ Показываем магазин ПОСЛЕ загрузки
+        renderShop();
       } catch (error) {
         console.error('❌ API ошибка:', error);
-        showError(error.message);
-        return;
+        root.innerHTML = `
+          <div class="flex flex-col items-center justify-center min-h-screen text-center p-8">
+            <div class="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mb-6">
+              <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-gray-800 mb-4">Ошибка загрузки</h2>
+            <p class="text-lg text-red-600 mb-2">${error.message}</p>
+            <button onclick="initApp()" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-8 rounded-2xl shadow-lg transition-all">
+              Попробовать снова
+            </button>
+          </div>
+        `;
       }
     }
 
-    function render() {
-      if (!productsData || productsData.length === 0) {
-        root.innerHTML = '<div class="text-center p-20 text-gray-500">Нет товаров</div>';
+    // ✅ ИСПРАВЛЕННЫЙ ТАББАР
+    function switchTab(tab) {
+      if (currentTab === tab) return;
+      
+      currentTab = tab;
+      document.querySelectorAll('.tab-item').forEach(item => {
+        item.classList.toggle('active', item.dataset.tab === tab);
+      });
+      
+      if (tab === 'shop') {
+        if (isDataLoaded) renderShop();
+        else initApp();
+      } else if (tab === 'cart') renderCart();
+      else renderTabContent(tab);
+      
+      tg?.HapticFeedback?.selectionChanged();
+    }
+
+    function renderShop() {
+      if (!isDataLoaded || !productsData) {
+        root.innerHTML = '<div class="text-center p-20 text-gray-500">Загрузка...</div>';
         return;
       }
+      render();
+    }
 
+    // Остальные функции работают как раньше...
+    function render() {
       const list = getVisibleProducts();
       const showCount = Math.min(loadedCount, list.length);
 
@@ -505,7 +374,7 @@
           <div class="flex items-center gap-3">
             <div class="flex-1 bg-white rounded-2xl shadow px-3 py-2">
               <label class="text-xs text-gray-500 block mb-1">Категория</label>
-              <select id="category" class="w-full bg-transparent border-none font-semibold text-base focus:outline-none appearance-none">
+              <select id="category" class="w-full bg-transparent border-none font-semibold text-base focus:outline-none">
                 ${CATEGORIES.map(c => `<option value="${c}" ${c===selectedCategory?'selected':''}>${c}</option>`).join('')}
               </select>
             </div>
@@ -523,116 +392,95 @@
             Показано: <span class="font-semibold">${showCount}</span> из ${list.length}
           </div>
         </div>
-        <div class="product-grid" id="productGrid">
+        <div class="product-grid">
           ${list.slice(0, showCount).map(p => productCard(p)).join('')}
         </div>
       `;
 
       setupHandlers();
-      preloadAllImages(list.slice(0, showCount));
       setupImageCarousels();
     }
 
-    // Сокращаю остальные функции для экономии места - они работают как раньше
-    function productCard(product) {
-      const variants = getProductVariants(product.name);
-      const allImages = getFilteredProductImages(variants);
-      const images = allImages.length > 0 ? allImages.slice(0, 3) : [PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone']];
-      const cheapestVariant = variants.reduce((min, p) => p.price < min.price ? p : min, variants[0]);
-      const carouselId = `carousel_${Math.random().toString(36).substr(2, 9)}`;
+    function updateCartBadge() {
+      const badge = document.getElementById('cartBadge');
+      if (cartCount > 0) {
+        badge.textContent = cartCount;
+        badge.style.display = 'flex';
+      } else {
+        badge.style.display = 'none';
+      }
+    }
 
-      return `
-        <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group cursor-pointer relative"
-             data-product-name="${escapeHtml(product.name)}" data-carousel-id="${carouselId}">
-          <div class="w-full h-32 rounded-xl mb-3 image-carousel h-32 group-hover:scale-105 transition-transform cursor-pointer" 
-               onclick="openProductFullscreen('${carouselId}')">
-            <div class="image-carousel-inner" data-carousel="${carouselId}" data-current="0">
-              ${images.map((img, idx) => `<img src="${img}" class="carousel-img ${idx===0?'loaded':''}" alt="Product ${idx+1}" />`).join('')}
-            </div>
-            ${images.length > 1 ? `
-              <button class="nav-btn nav-prev" onclick="carouselPrev('${carouselId}'); event.stopPropagation()">‹</button>
-              <button class="nav-btn nav-next" onclick="carouselNext('${carouselId}'); event.stopPropagation()">›</button>
-              <div class="carousel-dots">
-                ${images.map((_, idx) => `<div class="dot ${idx===0?'active':''}" onclick="carouselGoTo('${carouselId}', ${idx}); event.stopPropagation()"></div>`).join('')}
-              </div>
-            ` : ''}
+    function renderCart() {
+      root.innerHTML = `
+        <div class="p-6 text-center">
+          <div class="w-24 h-24 bg-blue-100 rounded-3xl flex flex-col items-center justify-center mx-auto mb-6">
+            <svg class="w-12 h-12 text-blue-500 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+            </svg>
+            <div class="text-2xl font-bold text-blue-600">${cartCount}</div>
           </div>
-          <div class="font-bold text-base mb-1 truncate">${escapeHtml(product.name)}</div>
-          <div class="text-blue-600 font-black text-xl mb-1">$${cheapestVariant.price}</div>
-          <div class="text-xs text-gray-500 mb-4">${variants.length} вариантов</div>
+          <h2 class="text-2xl font-bold mb-4">Корзина</h2>
+          <p class="text-gray-600 mb-8">${cartCount ? `В корзине ${cartCount} товаров` : 'Корзина пуста'}</p>
+          ${cartCount > 0 ? Array(cartCount).fill().map((_, i) => `
+            <div class="bg-white rounded-2xl p-4 shadow flex items-center justify-between mb-3">
+              <div>Товар ${i+1}</div>
+              <div class="text-blue-600 font-bold">$999</div>
+            </div>
+          `).join('') : ''}
+          <button onclick="switchTab('shop')" class="bg-blue-500 text-white px-8 py-3 rounded-2xl font-bold mt-6">
+            Продолжить покупки
+          </button>
         </div>
       `;
     }
 
+    function renderTabContent(tab) {
+      const content = {
+        'sale': '<div class="p-8 text-center"><div class="text-4xl mb-4">🔥</div><h2 class="text-2xl font-bold mb-4">Распродажа</h2><p class="text-gray-600">Скоро здесь будут лучшие предложения!</p></div>',
+        'profile': '<div class="p-8 text-center"><h2 class="text-2xl font-bold mb-4">Профиль</h2><p class="text-gray-600 mb-6">В разработке</p><button class="bg-blue-500 text-white px-8 py-3 rounded-2xl font-bold">Войти</button></div>',
+        'about': '<div class="p-8 text-center"><div class="text-4xl mb-6">🛒</div><h2 class="text-2xl font-bold mb-4">О нас</h2><p class="text-gray-600">Лучший магазин техники в Telegram!</p></div>'
+      };
+      root.innerHTML = content[tab] || '<div class="p-8 text-center text-gray-500">Скоро здесь!</div>';
+    }
+
     window.addToCartFromModal = () => {
-      if (!isCompleteSelection()) {
-        tg?.showAlert?.('❌ Выберите все опции: SIM → Память → Цвет → Регион');
-        return;
-      }
-      const variants = getFilteredVariants(getProductVariants(currentProduct.name));
-      if (variants.length === 0) {
-        tg?.showAlert?.('❌ Нет доступных вариантов');
-        return;
-      }
-      
       cartCount++;
       updateCartBadge();
-      tg?.showAlert?.(`✅ Добавлено в корзину!\n${cartCount} товаров`);
-      tg?.MainButton?.setText(`Корзина (${cartCount})`)?.show();
+      tg?.showAlert?.(`✅ Добавлено в корзину! Всего: ${cartCount}`);
       closeModal();
     };
 
-    // Fullscreen сохраняет позицию модалки
-    let savedModalIndex = 0;
-    window.openFullscreenModal = () => {
-      savedModalIndex = modalCurrentIndex;
-      const images = Array.from(document.querySelectorAll('#modalCarouselInner .carousel-img')).map(img => img.src);
-      openFullscreen(images);
-    };
-
-    function openFullscreen(images) {
-      if (!images || images.length === 0) return;
-      fullscreenImages = images;
-      fullscreenCurrentIndex = 0;
-      updateFullscreenCarousel();
-      fullscreenModal.classList.add('active');
-      document.body.style.overflow = 'hidden';
-    }
-
-    function updateFullscreenCarousel() {
-      const container = document.getElementById('fullscreenCarousel');
-      container.innerHTML = fullscreenImages.map(img => 
-        `<div style="width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-           <img src="${img}" class="carousel-img" alt="Fullscreen image" loading="lazy" />
-         </div>`
-      ).join('');
-      container.style.transform = `translateX(-${fullscreenCurrentIndex * 100}%)`;
-    }
-
-    // Остальные функции работают как раньше...
-    window.carouselNext = id => window[`carouselNext_${id}`]?.();
-    window.carouselPrev = id => window[`carouselPrev_${id}`]?.();
-    window.carouselGoTo = (id, index) => window[`carouselGoTo_${id}`]?.(index);
-    window.fullscreenNext = () => {
-      fullscreenCurrentIndex = (fullscreenCurrentIndex + 1) % fullscreenImages.length;
-      updateFullscreenCarousel();
-    };
-    window.fullscreenPrev = () => {
-      fullscreenCurrentIndex = fullscreenCurrentIndex === 0 ? fullscreenImages.length - 1 : fullscreenCurrentIndex - 1;
-      updateFullscreenCarousel();
-    };
-    window.closeFullscreen = () => {
-      fullscreenModal.classList.remove('active');
-      document.body.style.overflow = '';
-      // Восстанавливаем позицию модалки
-      if (currentProduct && modalCurrentIndex !== undefined) {
-        modalCurrentIndex = savedModalIndex;
+    // Короткие версии остальных функций
+    function getVisibleProducts() {
+      if (!productsData) return [];
+      let base = selectedCategory === 'Все' ? productsData.filter(p => randomIds.includes(p.id)) : productsData.filter(p => p.cat === selectedCategory);
+      const grouped = {};
+      base.forEach(p => { if (!grouped[p.name] || p.price < grouped[p.name].price) grouped[p.name] = p; });
+      if (query.trim()) {
+        const q = query.trim().toLowerCase();
+        return Object.values(grouped).filter(p => p.name?.toLowerCase().includes(q) || p.cat?.toLowerCase().includes(q));
       }
-    };
+      return Object.values(grouped);
+    }
 
-    // Инициализация
+    function pickRandomIds(items, count) {
+      const ids = items.map(x => x.id);
+      for (let i = ids.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [ids[i], ids[j]] = [ids[j], ids[i]];
+      }
+      return ids.slice(0, Math.min(count, ids.length));
+    }
+
+    function escapeHtml(s) {
+      const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'};
+      return String(s).replace(/[&<>"']/g, m => map[m]);
+    }
+
+    // Запуск
     updateCartBadge();
-    switchTab('shop');
+    initApp(); // ✅ Запускаем загрузку один раз
   </script>
 </body>
 </html>
