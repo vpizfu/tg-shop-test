@@ -28,38 +28,19 @@
     const tg = window.Telegram?.WebApp;
     try { tg?.ready(); tg?.expand(); } catch(e) {}
 
-    // ====== 20 ТОВАРОВ ======
-    const products = [
-      {id:1, name:'iPhone 15 Pro Max 256GB', price:1400, img:'https://images.unsplash.com/photo-1691113485254-72a612c2d8ab?w=300&h=300&fit=crop', cat:'iPhone'},
-      {id:2, name:'iPhone 15 Pro 128GB', price:1200, img:'https://images.unsplash.com/photo-1691113484676-7ab5010a5a4c?w=300&h=300&fit=crop', cat:'iPhone'},
-      {id:3, name:'iPhone 15 128GB', price:900, img:'https://images.unsplash.com/photo-1693622503037-0a9a5f6f9b3e?w=300&h=300&fit=crop', cat:'iPhone'},
-      {id:4, name:'iPhone 14 Pro Max', price:1100, img:'https://images.unsplash.com/photo-1673346009500-0cb12d234c1f?w=300&h=300&fit=crop', cat:'iPhone'},
-      {id:5, name:'iPhone 14 128GB', price:750, img:'https://images.unsplash.com/photo-1646725106931-d3516b65a3a1?w=300&h=300&fit=crop', cat:'iPhone'},
-      {id:6, name:'iPhone 15 Plus', price:1000, img:'https://images.unsplash.com/photo-1691113478371-4a8f9e7d8a8e?w=300&h=300&fit=crop', cat:'iPhone'},
-      {id:7, name:'iPhone 15 Pro Max 1TB', price:1700, img:'https://images.unsplash.com/photo-1691113485254-72a612c2d8ab?w=300&h=300&fit=crop', cat:'iPhone'},
-      
-      {id:8, name:'iPad Pro 13" M4', price:1300, img:'https://images.unsplash.com/photo-1583354355313-1cd0b3f6680f?w=300&h=300&fit=crop', cat:'iPad'},
-      {id:9, name:'iPad Air 11"', price:700, img:'https://images.unsplash.com/photo-1561154464-82e9adf32761?w=300&h=300&fit=crop', cat:'iPad'},
-      {id:10, name:'iPad 10th Gen', price:450, img:'https://images.unsplash.com/photo-1632661676792-213d7abef1e3?w=300&h=300&fit=crop', cat:'iPad'},
-      {id:11, name:'iPad Pro 11"', price:1100, img:'https://images.unsplash.com/photo-1583354355313-1cd0b3f6680f?w=300&h=300&fit=crop', cat:'iPad'},
-      
-      {id:12, name:'MacBook Air 13" M3', price:1300, img:'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop', cat:'MacBook'},
-      {id:13, name:'MacBook Pro 14" M3', price:2000, img:'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=300&h=300&fit=crop', cat:'MacBook'},
-      {id:14, name:'MacBook Air 15"', price:1500, img:'https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=300&h=300&fit=crop', cat:'MacBook'},
-      
-      {id:15, name:'Apple Watch Ultra 2', price:850, img:'https://images.unsplash.com/photo-1579586140626-2882d73086ec?w=300&h=300&fit=crop', cat:'Apple Watch'},
-      {id:16, name:'Apple Watch Series 10', price:450, img:'https://images.unsplash.com/photo-1523275335684-37898b6baf30?w=300&h=300&fit=crop', cat:'Apple Watch'},
-      {id:17, name:'Apple Watch SE', price:280, img:'https://images.unsplash.com/photo-1612872087720-bb876e2e67d1?w=300&h=300&fit=crop', cat:'Apple Watch'},
-      {id:18, name:'Apple Watch Hermès', price:1200, img:'https://images.unsplash.com/photo-1579586140626-2882d73086ec?w=300&h=300&fit=crop', cat:'Apple Watch'},
-      
-      {id:19, name:'AirPods Pro 2 USB-C', price:280, img:'https://images.unsplash.com/photo-1584822172844-3dd80ee2ed17?w=300&h=300&fit=crop', cat:'AirPods'},
-      {id:20, name:'AirPods 4 ANC', price:180, img:'https://images.unsplash.com/photo-1610945262588-5e9e9fa7b67f?w=300&h=300&fit=crop', cat:'AirPods'}
+    // 🔥 ВСТАВЬТЕ СЮДА ВАШ GOOGLE APPS SCRIPT URL
+    const API_URL = 'https://script.google.com/macros/s/AKfycbyOgGRD903gT52htCUTu-OzjiT5fd1Sh3X1yKqD-LEbHbYV-eafXLNwYQuVVPZ6Plj_wg/exec';
+    
+    // Fallback товары (если API недоступен)
+    const FALLBACK_PRODUCTS = [
+      {id:1, name:'iPhone 15 Pro Max', price:1400, img:'https://via.placeholder.com/300x300/007AFF/FFFFFF?text=iPhone', cat:'iPhone'},
+      {id:2, name:'iPad Air 11"', price:700, img:'https://via.placeholder.com/300x300/34C759/FFFFFF?text=iPad', cat:'iPad'},
+      {id:3, name:'MacBook Air M3', price:1300, img:'https://via.placeholder.com/300x300/FFD60A/000000?text=MacBook', cat:'MacBook'}
     ];
 
     const CATEGORIES = ['Все', 'iPhone', 'iPad', 'MacBook', 'Apple Watch', 'AirPods'];
-    let selectedCategory = 'Все', query = '', randomIds = pickRandomIds(products, 20), loadedCount = 10, imageCache = new Map();
+    let selectedCategory = 'Все', query = '', randomIds = [], loadedCount = 10, imageCache = new Map(), productsData = null;
     const root = document.getElementById('root');
-
     const PLACEHOLDERS = {
       'iPhone': 'https://via.placeholder.com/300x300/007AFF/FFFFFF?text=iPhone',
       'iPad': 'https://via.placeholder.com/300x300/34C759/FFFFFF?text=iPad', 
@@ -68,8 +49,43 @@
       'AirPods': 'https://via.placeholder.com/300x300/30D158/FFFFFF?text=AirPods'
     };
 
+    // ====== ЗАГРУЗКА ТОВАРОВ ИЗ GOOGLE SHEETS ======
+    async function initApp() {
+      try {
+        root.innerHTML = `
+          <div class="flex flex-col items-center justify-center min-h-[400px]">
+            <div class="w-20 h-20 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>
+            <div class="text-lg font-semibold text-gray-700 mb-2">Загрузка товаров...</div>
+            <div class="text-sm text-gray-500">Из Google Sheets</div>
+          </div>
+        `;
+        
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        
+        productsData = await response.json();
+        console.log('✅ Загружено товаров:', productsData.length);
+        
+        if (selectedCategory === 'Все') {
+          randomIds = pickRandomIds(productsData, Math.min(20, productsData.length));
+        }
+        
+      } catch(error) {
+        console.error('❌ API ошибка:', error);
+        productsData = FALLBACK_PRODUCTS;
+        tg?.showAlert?.('⚠️ Используются демо-товары');
+      }
+      
+      render();
+    }
+
     // ====== ОСНОВНОЙ РЕНДЕР ======
     function render() {
+      if (!productsData || productsData.length === 0) {
+        root.innerHTML = '<div class="text-center p-20 text-gray-500">Нет товаров</div>';
+        return;
+      }
+
       const list = getVisibleProducts();
       const showCount = Math.min(loadedCount, list.length);
       
@@ -97,6 +113,7 @@
             <div class="text-xs text-gray-500">
               Показано: <span class="font-semibold">${showCount}</span> из ${list.length}
             </div>
+            <div class="text-xs text-blue-600 font-semibold">Google Sheets API</div>
           </div>
         </div>
         <div class="grid grid-cols-2 gap-4 pb-20" id="productGrid">
@@ -106,42 +123,46 @@
 
       setupHandlers();
       loadImages(list.slice(0, showCount));
-      
-      // 🔄 Бесконечная прокрутка
       setTimeout(setupInfiniteScroll, 100);
     }
 
-    // ====== КАРТОЧКА ТОВАРА (ТОЛЬКО ИКОНКА КОРЗИНЫ) ======
+    // ====== КАРТОЧКА ТОВАРА ======
     function productCard(product) {
       const placeholder = PLACEHOLDERS[product.cat] || 'https://via.placeholder.com/300x300/ddd/999?text=?';
       return `
         <div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group cursor-pointer relative" 
              onclick="addToCart(${product.id})" data-product-id="${product.id}">
-          
-          <!-- ИЗОБРАЖЕНИЕ -->
           <div class="w-full h-32 rounded-xl mb-3 group-hover:scale-105 transition-transform placeholder-shimmer bg-gray-200 flex items-center justify-center relative overflow-hidden">
             <img src="${placeholder}" class="w-full h-32 rounded-xl object-cover absolute inset-0 opacity-0" 
                  data-src="${product.img}" data-product-id="${product.id}" />
           </div>
-          
-          <!-- НАЗВАНИЕ -->
           <div class="font-bold text-base mb-1 truncate">${escapeHtml(product.name)}</div>
-          
-          <!-- ЦЕНА -->
           <div class="text-blue-600 font-black text-xl mb-4">$${product.price}</div>
-          
-          <!-- 🛒 ТОЛЬКО ИКОНКА КОРЗИНЫ (СПРАВА НИЖЕ) -->
           <div class="absolute bottom-3 right-3 p-2 bg-white/90 backdrop-blur-sm rounded-2xl shadow-lg group-hover:scale-110 transition-all">
             <svg class="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" 
-                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
             </svg>
           </div>
         </div>
       `;
     }
 
-    // ====== БЕСКОНЕЧНАЯ ПРОКРУТКА ======
+    // ====== ПРОЧИЕ ФУНКЦИИ (без изменений) ======
+    function setupHandlers() {
+      document.getElementById('category')?.addEventListener('change', (e) => {
+        selectedCategory = e.target.value;
+        loadedCount = 10;
+        if (selectedCategory === 'Все') randomIds = pickRandomIds(productsData || [], 20);
+        render();
+      });
+
+      document.getElementById('search')?.addEventListener('input', (e) => {
+        query = e.target.value || '';
+        loadedCount = 10;
+        render();
+      });
+    }
+
     function setupInfiniteScroll() {
       const grid = document.getElementById('productGrid');
       if (!grid) return;
@@ -159,28 +180,10 @@
         });
       }, { threshold: 0.1 });
 
-      // Наблюдаем за последней карточкой
       const lastCard = grid.lastElementChild;
       if (lastCard) observer.observe(lastCard);
     }
 
-    // ====== ОБРАБОТЧИКИ ======
-    function setupHandlers() {
-      document.getElementById('category')?.addEventListener('change', (e) => {
-        selectedCategory = e.target.value;
-        loadedCount = 10;
-        if (selectedCategory === 'Все') randomIds = pickRandomIds(products, 20);
-        render();
-      });
-
-      document.getElementById('search')?.addEventListener('input', (e) => {
-        query = e.target.value || '';
-        loadedCount = 10;
-        render();
-      });
-    }
-
-    // ====== ИЗОБРАЖЕНИЯ ======
     async function loadImages(products) {
       products.forEach(product => {
         const imgElement = document.querySelector(`img[data-product-id="${product.id}"]`);
@@ -209,7 +212,7 @@
           imgElement.closest('.placeholder-shimmer')?.classList.remove('placeholder-shimmer');
         };
         img.onerror = () => {
-          const placeholder = PLACEHOLDERS[product.cat];
+          const placeholder = PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone'];
           imageCache.set(realSrc, placeholder);
           imgElement.src = placeholder;
           imgElement.classList.remove('opacity-0');
@@ -218,15 +221,19 @@
       } catch(e) {}
     }
 
-    // ====== ЛОГИКА ======
     function getVisibleProducts() {
+      if (!productsData || productsData.length === 0) return [];
+      
       let base = selectedCategory === 'Все' ? 
-        products.filter(p => randomIds.includes(p.id)) : 
-        products.filter(p => p.cat === selectedCategory);
+        productsData.filter(p => randomIds.includes(p.id)) : 
+        productsData.filter(p => p.cat === selectedCategory);
       
       if (query.trim()) {
         const q = query.trim().toLowerCase();
-        base = base.filter(p => p.name.toLowerCase().includes(q) || p.cat.toLowerCase().includes(q));
+        base = base.filter(p => 
+          p.name?.toLowerCase().includes(q) || 
+          p.cat?.toLowerCase().includes(q)
+        );
       }
       return base;
     }
@@ -246,14 +253,15 @@
     }
 
     function addToCart(id) {
-      const product = products.find(p => p.id === id);
+      const product = productsData?.find(p => p.id === id) || FALLBACK_PRODUCTS.find(p => p.id === id);
       tg?.HapticFeedback?.impactOccurred('medium');
-      tg?.showAlert?.(`✅ ${product.name}`);
+      tg?.showAlert?.(`✅ ${product?.name || 'Товар'} в корзину!`);
       tg?.MainButton?.setText('Корзина (1)')?.show();
     }
     window.addToCart = addToCart;
 
-    render();
+    // ====== СТАРТ ======
+    initApp();
   </script>
 </body>
 </html>
