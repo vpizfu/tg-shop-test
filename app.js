@@ -242,7 +242,17 @@ async function initApp() {
       throw new Error('Нет товаров');
     }
 
-    productsData = normalizeProducts(products);
+    const normalized = normalizeProducts(products);
+
+    // сначала найдём те название товаров, для которых есть хоть один inStock
+    const inStockNames = new Set(
+    normalized
+        .filter(v => v.inStock)
+        .map(v => v.name)
+    );
+
+    // теперь productsData = только те варианты, чьё имя есть в inStockNames
+    productsData = normalized.filter(v => inStockNames.has(v.name));
 
     // категории из данных
     const cats = Array.from(new Set(productsData.map(p => p.cat).filter(Boolean)));
