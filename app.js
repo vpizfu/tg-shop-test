@@ -431,26 +431,57 @@ function productCard(product) {
 }
 
 function selectOptionNoFocus(type, option) {
-  if (document.activeElement && document.activeElement.blur) {
-    document.activeElement.blur();
+    if (document.activeElement && document.activeElement.blur) {
+      document.activeElement.blur();
+    }
+  
+    // сохраняем скролл
+    const scrollContainer = document.querySelector('#modalContent .flex-1');
+    const prevScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+  
+    if (selectedOption[type] === option) {
+      const typeIndex = FILTER_ORDER.indexOf(type);
+      for (let i = typeIndex; i < FILTER_ORDER.length; i++) {
+        delete selectedOption[FILTER_ORDER[i]];
+      }
+    } else {
+      const typeIndex = FILTER_ORDER.indexOf(type);
+      for (let i = typeIndex + 1; i < FILTER_ORDER.length; i++) {
+        delete selectedOption[FILTER_ORDER[i]];
+      }
+      selectedOption[type] = option;
+    }
+  
+    renderProductModal(currentProduct);
+  
+    // восстанавливаем скролл
+    const newScrollContainer = document.querySelector('#modalContent .flex-1');
+    if (newScrollContainer) newScrollContainer.scrollTop = prevScrollTop;
+  
+    tg?.HapticFeedback?.impactOccurred('light');
   }
-
-  if (selectedOption[type] === option) {
+  
+  function clearOptionNoFocus(type) {
+    if (document.activeElement && document.activeElement.blur) {
+      document.activeElement.blur();
+    }
+  
+    const scrollContainer = document.querySelector('#modalContent .flex-1');
+    const prevScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+  
     const typeIndex = FILTER_ORDER.indexOf(type);
     for (let i = typeIndex; i < FILTER_ORDER.length; i++) {
       delete selectedOption[FILTER_ORDER[i]];
     }
-  } else {
-    const typeIndex = FILTER_ORDER.indexOf(type);
-    for (let i = typeIndex + 1; i < FILTER_ORDER.length; i++) {
-      delete selectedOption[FILTER_ORDER[i]];
-    }
-    selectedOption[type] = option;
+  
+    renderProductModal(currentProduct);
+  
+    const newScrollContainer = document.querySelector('#modalContent .flex-1');
+    if (newScrollContainer) newScrollContainer.scrollTop = prevScrollTop;
+  
+    tg?.HapticFeedback?.impactOccurred('light');
   }
-
-  renderProductModal(currentProduct);
-  tg?.HapticFeedback?.impactOccurred('light');
-}
+  
 
 // Карусели на карточках
 function setupImageCarousels() {
@@ -598,18 +629,6 @@ function initModalCarousel(imageCount) {
   };
 
   updateModalCarousel();
-}
-
-function clearOptionNoFocus(type) {
-  if (document.activeElement && document.activeElement.blur) {
-    document.activeElement.blur();
-  }
-  const typeIndex = FILTER_ORDER.indexOf(type);
-  for (let i = typeIndex; i < FILTER_ORDER.length; i++) {
-    delete selectedOption[FILTER_ORDER[i]];
-  }
-  renderProductModal(currentProduct);
-  tg?.HapticFeedback?.impactOccurred('light');
 }
 
 window.selectOptionNoFocus = selectOptionNoFocus;

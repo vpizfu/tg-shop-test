@@ -2,6 +2,12 @@ body {
   font-family: system-ui, -apple-system;
 }
 
+/* Safe area переменные */
+:root {
+  --tg-safe-area-inset-top: env(safe-area-inset-top, 0px);
+  --tg-safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+}
+
 /* Лоадер */
 .placeholder-shimmer {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -20,7 +26,7 @@ img.loaded {
   to { opacity: 1; }
 }
 
-/* Запрет зума / жесты – только на страницу, не на всё подряд */
+/* Запрет зума / жесты – только на страницу */
 html,
 body {
   touch-action: manipulation;
@@ -121,7 +127,7 @@ img,
   pointer-events: auto;
 }
 
-/* Горизонтальный скролл опций — БЕЗ snap, чтобы не дёргало */
+/* Горизонтальный скролл опций */
 .scroll-carousel {
   overflow-x: auto;
   display: flex;
@@ -136,6 +142,13 @@ img,
   flex-shrink: 0;
 }
 
+/* Бекдропы модалок с учётом safe area */
+#productModal,
+#fullscreenModal {
+  padding-top: calc(16px + var(--tg-safe-area-inset-top));
+  padding-bottom: calc(16px + var(--tg-safe-area-inset-bottom));
+}
+
 /* Fullscreen модалка */
 #fullscreenModal {
   position: fixed;
@@ -148,7 +161,8 @@ img,
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 20px;
+  padding-left: 20px;
+  padding-right: 20px;
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
@@ -200,7 +214,7 @@ img,
 .fullscreen-next { right: 16px; }
 .fullscreen-close {
   position: fixed;
-  top: 20px;
+  top: calc(20px + var(--tg-safe-area-inset-top));
   right: 20px;
   background: rgba(255,255,255,0.2);
   backdrop-filter: blur(20px);
@@ -257,6 +271,7 @@ img,
   border-top: 1px solid rgba(0,0,0,0.1);
   z-index: 999;
   padding: 8px 16px;
+  padding-bottom: calc(8px + var(--tg-safe-area-inset-bottom));
   max-width: 480px;
   margin: 0 auto;
   display: flex;
@@ -320,4 +335,3 @@ img,
 #modalContent .flex-1 {
   min-height: 0;
 }
-
