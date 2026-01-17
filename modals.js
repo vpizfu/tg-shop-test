@@ -69,6 +69,9 @@ window.selectOptionNoFocus = selectOptionNoFocus;
 window.clearOptionNoFocus = clearOptionNoFocus;
 
 window.changeQuantity = function(delta) {
+  const scrollContainer = document.querySelector('#modalContent .flex-1');
+  const prevScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+
   let q = selectedQuantity + delta;
   if (q < 1) q = 1;
   if (q > 100) q = 100;
@@ -76,10 +79,12 @@ window.changeQuantity = function(delta) {
   const span = document.getElementById('quantityValue');
   if (span) span.textContent = selectedQuantity;
 
-  // обновляем кнопку с суммой
   if (currentProduct) {
     renderProductModal(currentProduct);
   }
+
+  const newScrollContainer = document.querySelector('#modalContent .flex-1');
+  if (newScrollContainer) newScrollContainer.scrollTop = prevScrollTop;
 };
 
 window.addToCartFromModal = function() {
@@ -229,12 +234,16 @@ function renderProductModal(product) {
                 )
             ) +
           '</div>' +
-          '<p class="px-2 text-xs text-gray-500 mb-2 text-center">' +
-            '❓ Чтобы посмотреть реальные фото товара, выберите все параметры устройства.' +
-          '</p>' +
+          (
+            complete && filteredImages.length > 0
+              ? '<div class="h-4 mb-2"></div>'
+              : '<p class="px-2 text-xs text-gray-500 mb-2 text-center">' +
+                  '❓ Чтобы посмотреть реальные фото товара, выберите все параметры устройства.' +
+                '</p>'
+          ) +
         '</div>' +
 
-        '<div class="p-4 space-y-4">' +  // чуть подняли секцию опций
+        '<div class="px-4 pt-0 pb-4 space-y-4">' +
           FILTER_ORDER.map((type, index) => {
             const isLocked = index > getCurrentSectionIndex();
             return (

@@ -24,19 +24,24 @@ body {
   100% { background-position: -200% 0; }
 }
 
-/* если хочешь полностью убрать fadeIn — закомментируй этот блок */
-/* img.loaded {
-  animation: fadeIn 0.3s ease-in;
-} */
+/* Анимация появления (общая) */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
 }
 
-/* конкретно для карточек магазина убираем анимацию */
+/* Отключаем fadeIn для картинок в карточках товаров,
+   чтобы при переключении вкладок не было "моргания" */
 .product-grid img.loaded {
   animation: none;
 }
+
+/* Если хочешь полностью отключить fadeIn везде, раскомментируй: */
+/*
+img.loaded {
+  animation: fadeIn 0.3s ease-in;
+}
+*/
 
 /* Картинки */
 img,
@@ -210,6 +215,18 @@ img,
 }
 #search::placeholder {
   color: #9ca3af;
+}
+
+/* Фиксированная кнопка заказа над таббаром */
+.cart-checkout-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--tabbar-height); /* над таббаром */
+  background: #ffffff;
+  border-top: 1px solid rgba(0,0,0,0.06);
+  padding: 12px 24px 12px;
+  z-index: 998;
 }
 
 /* Таббар */
