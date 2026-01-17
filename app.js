@@ -17,12 +17,12 @@ let selectedCategory = 'Все',
     searchTimeout = null,
     currentTab = 'shop';
 
-let cartItems = [];        // {id,name,price,storage,color,region,quantity,available}
-let savedAddresses = [];   // [string]
-let previousOrders = [];   // {id,date,items,subtotal,commission,total,address,paymentType,pickupMode,pickupLocation}
+let cartItems = [];
+let savedAddresses = [];
+let previousOrders = [];
 
-let paymentType = 'cash';  // 'cash' | 'card'
-let pickupMode = false;    // false = доставка, true = самовывоз
+let paymentType = 'cash';
+let pickupMode = false;
 let pickupLocation = '';
 
 const PICKUP_LOCATIONS = [
@@ -32,6 +32,18 @@ const PICKUP_LOCATIONS = [
 
 const root = document.getElementById('root');
 const modal = document.getElementById('productModal');
+
+// ---------- Глобальная обработка ошибок ----------
+
+window.onerror = function (message, source, lineno, colno, error) {
+  console.error('Global error:', message, source, lineno, colno, error);
+  try {
+    showError('Произошла ошибка в приложении. Попробуйте обновить Mini App.');
+  } catch (e) {
+    tg?.showAlert?.('Произошла ошибка в приложении. Попробуйте обновить Mini App.');
+  }
+  return true;
+};
 
 // ---------- localStorage ----------
 
@@ -44,11 +56,7 @@ function saveCartToStorage() {
 function loadCartFromStorage() {
   try {
     const raw = localStorage.getItem('cartItems');
-    if (raw) {
-      cartItems = JSON.parse(raw);
-    } else {
-      cartItems = [];
-    }
+    cartItems = raw ? JSON.parse(raw) : [];
   } catch (e) {
     cartItems = [];
   }
@@ -64,11 +72,7 @@ function saveAddressesToStorage() {
 function loadAddressesFromStorage() {
   try {
     const raw = localStorage.getItem('addresses');
-    if (raw) {
-      savedAddresses = JSON.parse(raw);
-    } else {
-      savedAddresses = [];
-    }
+    savedAddresses = raw ? JSON.parse(raw) : [];
   } catch (e) {
     savedAddresses = [];
   }
@@ -83,11 +87,7 @@ function saveOrdersToStorage() {
 function loadOrdersFromStorage() {
   try {
     const raw = localStorage.getItem('orders');
-    if (raw) {
-      previousOrders = JSON.parse(raw);
-    } else {
-      previousOrders = [];
-    }
+    previousOrders = raw ? JSON.parse(raw) : [];
   } catch (e) {
     previousOrders = [];
   }
@@ -123,8 +123,7 @@ function initTabBar() {
 function switchTab(tabName) {
   if (currentTab === tabName) return;
 
-  // закрыть модалку при переключении вкладки
-  if (typeof closeModal === 'function' && !modal.classList.contains('hidden')) {
+  if (typeof closeModal === 'function' && modal && !modal.classList.contains('hidden')) {
     closeModal();
   }
 
@@ -134,7 +133,7 @@ function switchTab(tabName) {
   if (currentEl) currentEl.classList.add('active');
 
   if (tabName === 'shop') {
-    renderShop();
+    if (typeof renderShop === 'function') renderShop();
   } else if (tabName === 'cart') {
     showCartTab();
   } else if (tabName === 'sale') {
@@ -183,7 +182,7 @@ function addToCart(variant, quantity) {
       storage: freshVariant.storage,
       color: freshVariant.color,
       region: freshVariant.region,
-      quantity: quantity,
+      quantity,
       available: true
     });
   }
@@ -214,19 +213,17 @@ window.removeCartItem = function(index) {
 
 function syncCartWithProducts() {
   if (!productsData) return;
-
   cartItems = cartItems.map(item => {
     const exists = productsData.some(p => p.id === item.id && p.inStock);
     return { ...item, available: exists };
   });
-
   saveCartToStorage();
   updateCartBadge();
 }
 
 function syncProductsAndCart() {
   syncCartWithProducts();
-  if (currentTab === 'shop') renderShop();
+  if (currentTab === 'shop' && typeof renderShop === 'function') renderShop();
   if (currentTab === 'cart') showCartTab();
 }
 
@@ -263,7 +260,7 @@ function showCartTab() {
   }
 
   const subtotal = cartItems.reduce((sum, item) =>
-    sum + (item.price * item.quantity), 0
+    sum + item.price * item.quantity, 0
   );
   const commission = paymentType === 'card' ? Math.round(subtotal * 0.15) : 0;
   const total = subtotal + commission;
@@ -419,12 +416,7 @@ function showSaleTab() {
 window.toggleOrderDetails = function(index) {
   const block = document.getElementById('orderDetails_' + index);
   if (!block) return;
-  const isHidden = block.classList.contains('hidden');
-  if (isHidden) {
-    block.classList.remove('hidden');
-  } else {
-    block.classList.add('hidden');
-  }
+  block.classList.toggle('hidden');
 };
 
 function showProfileTab() {
@@ -552,7 +544,7 @@ function showAboutTab() {
 // ---------- Ошибка ----------
 
 function showError(message) {
-  root.innerHTML = '' +
+  root.innerHTML =
     '<div class="flex flex-col items-center justify-center min-h-screen text-center p-8 pb-[65px]">' +
       '<div class="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mb-6">' +
         '<svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
@@ -589,7 +581,7 @@ if (modal) {
 
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    if (!modal.classList.contains('hidden')) {
+    if (modal && !modal.classList.contains('hidden')) {
       closeModal();
     }
   }
@@ -731,17 +723,40 @@ async function fetchAndUpdateProducts(showLoader = false) {
 // ---------- Инициализация ----------
 
 async function initApp() {
-  initTabBar();
-  loadOrdersFromStorage();
-  loadAddressesFromStorage();
-  loadCartFromStorage();
+  try {
+    if (typeof initTabBar === 'function') {
+      initTabBar();
+    }
 
-  await fetchAndUpdateProducts(true);
-  renderShop();
+    loadOrdersFromStorage();
+    loadAddressesFromStorage();
+    loadCartFromStorage();
 
-  setInterval(() => {
-    fetchAndUpdateProducts(false);
-  }, 5 * 60 * 1000);
+    if (typeof fetchAndUpdateProducts === 'function') {
+      await fetchAndUpdateProducts(true);
+    } else {
+      throw new Error('Функция fetchAndUpdateProducts не найдена (products.js не загружен)');
+    }
+
+    if (typeof renderShop === 'function') {
+      renderShop();
+    } else {
+      throw new Error('Функция renderShop не найдена (products.js не загружен)');
+    }
+
+    setInterval(() => {
+      try {
+        if (typeof fetchAndUpdateProducts === 'function') {
+          fetchAndUpdateProducts(false).catch(err => console.error('Auto-refresh error', err));
+        }
+      } catch (e) {
+        console.error('Auto-refresh exception', e);
+      }
+    }, 5 * 60 * 1000);
+  } catch (e) {
+    console.error('Init error:', e);
+    showError(e.message || 'Ошибка инициализации приложения');
+  }
 }
 
 initApp();

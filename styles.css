@@ -270,7 +270,7 @@ img,
 /* Отступ под таббар для основного контента */
 .main-content {
   padding: 16px;
-  padding-bottom: calc(var(--tabbar-height) + 24px); /* ~70 + 24 = ~94px */
+  padding-bottom: calc(var(--tabbar-height) + 24px);
   padding-top: 8px;
   box-sizing: border-box;
 }
