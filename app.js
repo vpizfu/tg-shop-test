@@ -2,7 +2,8 @@ const tg = window.Telegram?.WebApp;
 try { tg?.ready(); tg?.expand(); } catch (e) {}
 
 const API_URL = 'https://script.google.com/macros/s/AKfycbzp4E0zx1A5Jl-XD11IwUntT5cnF8lZQIdcdJQZcegXnUTy5dn23EhceyZ3P_MaC7ZZxQ/exec';
-const CATEGORIES = ['Все', 'iPhone', 'iPad', 'MacBook', 'Apple Watch', 'AirPods'];
+
+let CATEGORIES = ['Все'];
 
 let selectedCategory = 'Все',
     query = '',
@@ -18,7 +19,6 @@ let selectedCategory = 'Все',
 
 const root = document.getElementById('root');
 const modal = document.getElementById('productModal');
-const fullscreenModal = document.getElementById('fullscreenModal');
 
 // Запрет зума
 document.addEventListener('gesturestart', e => e.preventDefault());
@@ -213,18 +213,11 @@ if (modal) {
     if (e.target === modal) closeModal();
   });
 }
-if (fullscreenModal) {
-  fullscreenModal.addEventListener('click', e => {
-    if (e.target === fullscreenModal) closeFullscreen();
-  });
-}
 
 // ESC
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
-    if (fullscreenModal.classList.contains('active')) {
-      closeFullscreen();
-    } else if (!modal.classList.contains('hidden')) {
+    if (!modal.classList.contains('hidden')) {
       closeModal();
     }
   }
@@ -250,6 +243,11 @@ async function initApp() {
     }
 
     productsData = normalizeProducts(products);
+
+    // категории из данных
+    const cats = Array.from(new Set(productsData.map(p => p.cat).filter(Boolean)));
+    CATEGORIES = ['Все', ...cats];
+
     if (selectedCategory === 'Все') {
       randomIds = pickRandomIds(productsData, Math.min(20, productsData.length));
     }
