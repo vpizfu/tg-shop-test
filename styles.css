@@ -8,6 +8,14 @@ body {
   --tg-safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
 }
 
+/* Базовые настройки и safe area для страницы */
+html,
+body {
+  touch-action: manipulation;
+  padding-top: var(--tg-safe-area-inset-top);
+  padding-bottom: var(--tg-safe-area-inset-bottom);
+}
+
 /* Лоадер */
 .placeholder-shimmer {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
@@ -26,11 +34,7 @@ img.loaded {
   to { opacity: 1; }
 }
 
-/* Запрет зума / жесты – только на страницу */
-html,
-body {
-  touch-action: manipulation;
-}
+/* Картинки */
 img,
 .image-carousel {
   pointer-events: auto;
@@ -142,11 +146,11 @@ img,
   flex-shrink: 0;
 }
 
-/* Бекдропы модалок с учётом safe area */
+/* Бекдропы модалок с учётом safe area снизу/сверху */
 #productModal,
 #fullscreenModal {
-  padding-top: calc(16px + var(--tg-safe-area-inset-top));
-  padding-bottom: calc(16px + var(--tg-safe-area-inset-bottom));
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 
 /* Fullscreen модалка */
@@ -322,9 +326,10 @@ img,
   justify-content: center;
 }
 
-/* Отступ под таббар */
+/* Отступ под таббар и верхний safe area */
 .main-content {
   padding-bottom: 100px;
+  padding-top: 8px;
 }
 
 /* Чтобы середина модалки могла скроллиться */
