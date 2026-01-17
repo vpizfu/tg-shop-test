@@ -431,57 +431,54 @@ function productCard(product) {
 }
 
 function selectOptionNoFocus(type, option) {
-    if (document.activeElement && document.activeElement.blur) {
-      document.activeElement.blur();
-    }
-  
-    // сохраняем скролл
-    const scrollContainer = document.querySelector('#modalContent .flex-1');
-    const prevScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
-  
-    if (selectedOption[type] === option) {
-      const typeIndex = FILTER_ORDER.indexOf(type);
-      for (let i = typeIndex; i < FILTER_ORDER.length; i++) {
-        delete selectedOption[FILTER_ORDER[i]];
-      }
-    } else {
-      const typeIndex = FILTER_ORDER.indexOf(type);
-      for (let i = typeIndex + 1; i < FILTER_ORDER.length; i++) {
-        delete selectedOption[FILTER_ORDER[i]];
-      }
-      selectedOption[type] = option;
-    }
-  
-    renderProductModal(currentProduct);
-  
-    // восстанавливаем скролл
-    const newScrollContainer = document.querySelector('#modalContent .flex-1');
-    if (newScrollContainer) newScrollContainer.scrollTop = prevScrollTop;
-  
-    tg?.HapticFeedback?.impactOccurred('light');
+  if (document.activeElement && document.activeElement.blur) {
+    document.activeElement.blur();
   }
-  
-  function clearOptionNoFocus(type) {
-    if (document.activeElement && document.activeElement.blur) {
-      document.activeElement.blur();
-    }
-  
-    const scrollContainer = document.querySelector('#modalContent .flex-1');
-    const prevScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
-  
+
+  const scrollContainer = document.querySelector('#modalContent .flex-1');
+  const prevScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+
+  if (selectedOption[type] === option) {
     const typeIndex = FILTER_ORDER.indexOf(type);
     for (let i = typeIndex; i < FILTER_ORDER.length; i++) {
       delete selectedOption[FILTER_ORDER[i]];
     }
-  
-    renderProductModal(currentProduct);
-  
-    const newScrollContainer = document.querySelector('#modalContent .flex-1');
-    if (newScrollContainer) newScrollContainer.scrollTop = prevScrollTop;
-  
-    tg?.HapticFeedback?.impactOccurred('light');
+  } else {
+    const typeIndex = FILTER_ORDER.indexOf(type);
+    for (let i = typeIndex + 1; i < FILTER_ORDER.length; i++) {
+      delete selectedOption[FILTER_ORDER[i]];
+    }
+    selectedOption[type] = option;
   }
-  
+
+  renderProductModal(currentProduct);
+
+  const newScrollContainer = document.querySelector('#modalContent .flex-1');
+  if (newScrollContainer) newScrollContainer.scrollTop = prevScrollTop;
+
+  tg?.HapticFeedback?.impactOccurred('light');
+}
+
+function clearOptionNoFocus(type) {
+  if (document.activeElement && document.activeElement.blur) {
+    document.activeElement.blur();
+  }
+
+  const scrollContainer = document.querySelector('#modalContent .flex-1');
+  const prevScrollTop = scrollContainer ? scrollContainer.scrollTop : 0;
+
+  const typeIndex = FILTER_ORDER.indexOf(type);
+  for (let i = typeIndex; i < FILTER_ORDER.length; i++) {
+    delete selectedOption[FILTER_ORDER[i]];
+  }
+
+  renderProductModal(currentProduct);
+
+  const newScrollContainer = document.querySelector('#modalContent .flex-1');
+  if (newScrollContainer) newScrollContainer.scrollTop = prevScrollTop;
+
+  tg?.HapticFeedback?.impactOccurred('light');
+}
 
 // Карусели на карточках
 function setupImageCarousels() {
@@ -782,13 +779,13 @@ function renderProductModal(product) {
         '</div>' +
       '</div>' +
 
-      '<div class="p-6 border-t bg-white">' +
+      '<div class="modal-footer border-t bg-white">' +
         '<button onclick="addToCartFromModal()"' +
                 ' class="w-full ' +
                   (complete && filteredVariants.length > 0
                     ? 'bg-blue-500 hover:bg-blue-600'
                     : 'bg-gray-400 cursor-not-allowed') +
-                  ' text-white font-bold py-4 px-6 rounded-2xl text-lg shadow-lg transform hover:-translate-y-0.5 transition-all"' +
+                  ' text-white font-semibold px-4 rounded-2xl shadow-lg transition-all"' +
                 (complete && filteredVariants.length > 0 ? '' : ' disabled') +
                 '>' +
           (complete && filteredVariants.length > 0
