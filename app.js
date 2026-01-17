@@ -331,7 +331,6 @@ function setupHandlers() {
   // Открытие модалки по клику на карточку
   document.querySelectorAll('[data-product-name]').forEach(card => {
     card.addEventListener('click', function(e) {
-      // игнорируем клики по кнопкам карусели и точкам
       if (e.target.closest('button') || e.target.closest('.dot')) {
         return;
       }
