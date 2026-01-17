@@ -20,8 +20,9 @@ img.loaded {
   to { opacity: 1; }
 }
 
-/* Запрет зума / жесты */
-* {
+/* Запрет зума / жесты – только на страницу, не на всё подряд */
+html,
+body {
   touch-action: manipulation;
 }
 img,
@@ -179,21 +180,24 @@ img,
   background: rgba(255,255,255,0.2);
   backdrop-filter: blur(20px);
   border: none;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   color: white;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
   z-index: 1001;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .fullscreen-nav:hover {
   background: rgba(255,255,255,0.3);
 }
-.fullscreen-prev { left: 20px; }
-.fullscreen-next { right: 20px; }
+.fullscreen-prev { left: 16px; }
+.fullscreen-next { right: 16px; }
 .fullscreen-close {
   position: fixed;
   top: 20px;
