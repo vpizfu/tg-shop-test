@@ -12,19 +12,27 @@ body {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-img.loaded { animation: fadeIn 0.3s ease-in; }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+img.loaded {
+  animation: fadeIn 0.3s ease-in;
+}
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
 
-/* Запрет зума */
-* { touch-action: manipulation !important; }
-img, .image-carousel {
-  pointer-events: auto !important;
-  touch-action: manipulation !important;
+/* Запрет зума / жесты – только на страницу, не на всё подряд */
+html,
+body {
+  touch-action: manipulation;
+}
+img,
+.image-carousel {
+  pointer-events: auto;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
 
-/* Сетка всегда 2 колонки */
+/* Сетка товаров: всегда 2 колонки */
 .product-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -32,7 +40,7 @@ img, .image-carousel {
   padding-bottom: 5rem;
 }
 
-/* Карусель изображений - ЕДИНСТВЕННЫЙ СТИЛЬ ДЛЯ ВСЕХ */
+/* Карусель изображений (общий стиль) */
 .image-carousel {
   position: relative;
   overflow: hidden;
@@ -52,7 +60,7 @@ img, .image-carousel {
   flex-shrink: 0;
 }
 
-/* Кнопки навигации */
+/* Кнопки навигации карусели */
 .nav-btn {
   position: absolute;
   top: 50%;
@@ -73,11 +81,13 @@ img, .image-carousel {
   transition: all 0.2s ease;
   cursor: pointer;
 }
-.image-carousel:hover .nav-btn { opacity: 1; }
+.image-carousel:hover .nav-btn {
+  opacity: 1;
+}
 .nav-prev { left: 8px; }
 .nav-next { right: 8px; }
 
-/* Индикаторы */
+/* Индикаторы карусели */
 .carousel-dots {
   position: absolute;
   bottom: 8px;
@@ -94,9 +104,11 @@ img, .image-carousel {
   transition: all 0.2s ease;
   cursor: pointer;
 }
-.dot.active { background: #3B82F6; }
+.dot.active {
+  background: #3B82F6;
+}
 
-/* Секвенициальный выбор опций */
+/* Секции опций (последовательный выбор) */
 .option-section {
   transition: all 0.3s ease;
 }
@@ -109,16 +121,20 @@ img, .image-carousel {
   pointer-events: auto;
 }
 
-/* Скролл опций */
+/* Горизонтальный скролл опций — БЕЗ snap, чтобы не дёргало */
 .scroll-carousel {
-  scroll-snap-type: x mandatory;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
   overflow-x: auto;
-  overscroll-behavior-x: contain;
+  display: flex;
+  gap: 8px;
+  padding-bottom: 4px;
+  scrollbar-width: none;
 }
-.scroll-carousel::-webkit-scrollbar { display: none; }
-.scroll-item { scroll-snap-align: start; flex-shrink: 0; }
+.scroll-carousel::-webkit-scrollbar {
+  display: none;
+}
+.scroll-item {
+  flex-shrink: 0;
+}
 
 /* Fullscreen модалка */
 #fullscreenModal {
@@ -164,19 +180,24 @@ img, .image-carousel {
   background: rgba(255,255,255,0.2);
   backdrop-filter: blur(20px);
   border: none;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   color: white;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: bold;
   z-index: 1001;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.fullscreen-nav:hover { background: rgba(255,255,255,0.3); }
-.fullscreen-prev { left: 20px; }
-.fullscreen-next { right: 20px; }
+.fullscreen-nav:hover {
+  background: rgba(255,255,255,0.3);
+}
+.fullscreen-prev { left: 16px; }
+.fullscreen-next { right: 16px; }
 .fullscreen-close {
   position: fixed;
   top: 20px;
@@ -193,12 +214,14 @@ img, .image-carousel {
   z-index: 1001;
 }
 
+/* Блок с изображением в модалке */
 .modal-image-section {
   padding: 16px 24px 0;
   border-bottom: 1px solid #e5e7eb;
   margin-bottom: 12px;
 }
 
+/* Состояние, когда нет изображений */
 .no-images {
   display: flex;
   flex-direction: column;
@@ -216,10 +239,14 @@ img, .image-carousel {
 }
 
 /* Поиск */
-#search { color: #111827; }
-#search::placeholder { color: #9ca3af; }
+#search {
+  color: #111827;
+}
+#search::placeholder {
+  color: #9ca3af;
+}
 
-/* ТАББАР */
+/* Таббар */
 #tabBar {
   position: fixed;
   bottom: 0;
@@ -280,7 +307,7 @@ img, .image-carousel {
   justify-content: center;
 }
 
-/* Скрытие контента под таббаром */
+/* Отступ под таббар */
 .main-content {
   padding-bottom: 100px;
 }
