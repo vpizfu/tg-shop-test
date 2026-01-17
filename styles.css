@@ -4,7 +4,7 @@ body {
 
 /* Таббар: фиксированная высота */
 :root {
-  --tabbar-height: 60px;
+  --tabbar-height: 70px;
 }
 
 /* Базовые настройки */
