@@ -62,11 +62,15 @@ window.addToCartFromModal = function() {
     tg?.showAlert?.('❌ Выберите все опции: SIM → Память → Цвет → Регион');
     return;
   }
-  const variants = getFilteredVariants(getProductVariants(currentProduct.name));
+
+  const allVariants = getFilteredVariants(getProductVariants(currentProduct.name));
+  const variants = allVariants.filter(v => v.inStock); // только ✅
+
   if (variants.length === 0) {
     tg?.showAlert?.('❌ Нет доступных вариантов');
     return;
   }
+
   const selectedVariant = variants[0];
   addToCart();
   tg?.showAlert?.(
@@ -90,7 +94,11 @@ function renderProductModal(product) {
   });
 
   const complete = isCompleteSelection();
-  const filteredImages = complete ? getFilteredProductImages(filteredVariants) : [];
+
+  // только варианты с ✅
+  const availableVariants = filteredVariants.filter(v => v.inStock);
+  const filteredImages = complete ? getFilteredProductImages(availableVariants) : [];
+
   modalImageIndexBeforeFullscreen = modalCurrentIndex;
 
   document.getElementById('modalContent').innerHTML =
@@ -190,13 +198,13 @@ function renderProductModal(product) {
           '<div class="pt-4 border-t">' +
             '<div class="text-center text-sm text-gray-500 mb-4">' +
               'Доступно: <span id="variantCount" class="font-bold text-blue-600">' +
-                filteredVariants.length +
+                availableVariants.length +
               '</span> вариантов' +
-              (complete && filteredVariants.length === 1
+              (complete && availableVariants.length === 1
                 ? '<div class="text-xs mt-1 bg-blue-50 border border-blue-200 rounded-xl p-2">' +
-                    '✅ Выбран: ' + filteredVariants[0].storage + ' | ' +
-                                   filteredVariants[0].color + ' | ' +
-                                   filteredVariants[0].region +
+                    '✅ Выбран: ' + availableVariants[0].storage + ' | ' +
+                                   availableVariants[0].color + ' | ' +
+                                   availableVariants[0].region +
                   '</div>'
                 : ''
               ) +
@@ -208,14 +216,14 @@ function renderProductModal(product) {
       '<div class="modal-footer border-t bg-white">' +
         '<button onclick="addToCartFromModal()"' +
                 ' class="w-full ' +
-                  (complete && filteredVariants.length > 0
+                  (complete && availableVariants.length > 0
                     ? 'bg-blue-500 hover:bg-blue-600'
                     : 'bg-gray-400 cursor-not-allowed') +
                   ' text-white font-semibold px-4 rounded-2xl shadow-lg transition-all"' +
-                (complete && filteredVariants.length > 0 ? '' : ' disabled') +
+                (complete && availableVariants.length > 0 ? '' : ' disabled') +
                 '>' +
-          (complete && filteredVariants.length > 0
-            ? '✅ В корзину $' + (filteredVariants[0] && filteredVariants[0].price ? filteredVariants[0].price : '')
+          (complete && availableVariants.length > 0
+            ? '✅ В корзину $' + (availableVariants[0] && availableVariants[0].price ? availableVariants[0].price : '')
             : 'Выберите все опции') +
         '</button>' +
       '</div>' +

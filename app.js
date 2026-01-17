@@ -1,7 +1,7 @@
 const tg = window.Telegram?.WebApp;
 try { tg?.ready(); tg?.expand(); } catch (e) {}
 
-const API_URL = 'https://script.google.com/macros/s/AKfycbzo-HEFFXRjN6PQrhWNhlInY2sP244r30gOyAMHLA0y2mAbA8jcOUtr1RcFhL_1A8GliQ/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbzp4E0zx1A5Jl-XD11IwUntT5cnF8lZQIdcdJQZcegXnUTy5dn23EhceyZ3P_MaC7ZZxQ/exec';
 const CATEGORIES = ['Все', 'iPhone', 'iPad', 'MacBook', 'Apple Watch', 'AirPods'];
 
 let selectedCategory = 'Все',

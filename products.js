@@ -20,6 +20,8 @@ function normalizeProducts(products) {
       region: variant.region || '',
       simType: variant.sim || '',
       color: variant.color || '',
+      inStock: !!variant.inStock,
+      commonImage: product.commonImage || '',
       images: Array.isArray(variant.images) ? variant.images : []
     }))
   );
@@ -169,9 +171,14 @@ function renderShop() {
 function productCard(product) {
   const variants = getProductVariants(product.name);
   const allImages = getFilteredProductImages(variants);
+
+  const commonImage = variants[0]?.commonImage || product.commonImage || '';
+  const fallbackByCategory = PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone'];
+
   const images = allImages.length > 0
     ? allImages.slice(0, 3)
-    : [PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone']];
+    : [commonImage || fallbackByCategory];
+
   const cheapestVariant = variants.reduce((min, p) => (p.price < min.price ? p : min), variants[0]);
   const carouselId = 'carousel_' + Math.random().toString(36).substr(2, 9);
 
