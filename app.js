@@ -378,17 +378,16 @@ function showCartTab() {
           '</div>' +
         '</div>' +
       '</div>' +
-
-      '<div class="fixed left-0 right-0 bottom-0 px-6 pb-4 pt-3 bg-white border-t">' +
-        '<button onclick="placeOrder()"' +
-                ' class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all"' +
-                (cartItems.some(i => !i.available) ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '') +
-                '>' +
-          (cartItems.some(i => !i.available)
-            ? 'Удалите недоступные товары'
-            : 'Оформить заказ') +
-        '</button>' +
-      '</div>' +
+    '</div>' +
+    '<div class="fixed left-0 right-0 bottom-0 px-6 pb-4 pt-3 bg-white border-t">' +
+      '<button onclick="placeOrder()"' +
+              ' class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all"' +
+              (cartItems.some(i => !i.available) ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '') +
+              '>' +
+        (cartItems.some(i => !i.available)
+          ? 'Удалите недоступные товары'
+          : 'Оформить заказ') +
+      '</button>' +
     '</div>';
 }
 
@@ -721,7 +720,6 @@ async function fetchAndUpdateProducts(showLoader = false) {
 }
 
 // ---------- Инициализация ----------
-
 async function initApp() {
   try {
     if (typeof initTabBar === 'function') {

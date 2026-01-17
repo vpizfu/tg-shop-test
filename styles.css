@@ -23,12 +23,19 @@ body {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-img.loaded {
+
+/* если хочешь полностью убрать fadeIn — закомментируй этот блок */
+/* img.loaded {
   animation: fadeIn 0.3s ease-in;
-}
+} */
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+/* конкретно для карточек магазина убираем анимацию */
+.product-grid img.loaded {
+  animation: none;
 }
 
 /* Картинки */

@@ -75,6 +75,11 @@ window.changeQuantity = function(delta) {
   selectedQuantity = q;
   const span = document.getElementById('quantityValue');
   if (span) span.textContent = selectedQuantity;
+
+  // обновляем кнопку с суммой
+  if (currentProduct) {
+    renderProductModal(currentProduct);
+  }
 };
 
 window.addToCartFromModal = function() {
@@ -149,11 +154,11 @@ function renderProductModal(product) {
 
   if (!complete) {
     headerPriceText = 'от $' + currentMinPrice;
-    headerSuffix = ' ед.';
+    headerSuffix = 'за единицу';
   } else if (complete && availableVariants.length > 0) {
     const priceToShow = availableVariants[0].price;
     headerPriceText = '$' + priceToShow;
-    headerSuffix = 'за ед';
+    headerSuffix = 'за единицу';
   } else {
     headerPriceText = 'Нет вариантов';
     headerSuffix = '';
@@ -229,7 +234,7 @@ function renderProductModal(product) {
           '</p>' +
         '</div>' +
 
-        '<div class="p-6 space-y-4">' +
+        '<div class="p-4 space-y-4">' +  // чуть подняли секцию опций
           FILTER_ORDER.map((type, index) => {
             const isLocked = index > getCurrentSectionIndex();
             return (
@@ -323,7 +328,6 @@ function renderProductModal(product) {
   }
 }
 
-// Модальная карусель
 function initModalCarousel(imageCount) {
   if (imageCount <= 1) return;
   modalImageCount = imageCount;
