@@ -2,18 +2,17 @@ body {
   font-family: system-ui, -apple-system;
 }
 
-/* Safe area переменные */
+/* Safe area + размеры */
 :root {
   --tg-safe-area-inset-top: env(safe-area-inset-top, 0px);
   --tg-safe-area-inset-bottom: env(safe-area-inset-bottom, 0px);
+  --tabbar-height: 64px; /* подгони при необходимости */
 }
 
-/* Базовые настройки и safe area для страницы */
+/* Базовые настройки */
 html,
 body {
   touch-action: manipulation;
-  padding-top: var(--tg-safe-area-inset-top);
-  padding-bottom: var(--tg-safe-area-inset-bottom);
 }
 
 /* Лоадер */
@@ -146,11 +145,32 @@ img,
   flex-shrink: 0;
 }
 
-/* Бекдропы модалок с учётом safe area снизу/сверху */
-#productModal,
-#fullscreenModal {
-  padding-top: 16px;
-  padding-bottom: 16px;
+/* Бекдроп модалки товара */
+#productModal {
+  padding: 16px;
+}
+
+/* Окно модалки: не залезать под таббар, но давать скролл внутри */
+#modalContent {
+  max-height: calc(100vh - var(--tabbar-height) - var(--tg-safe-area-inset-bottom) - 16px);
+  min-height: 0;
+}
+
+/* Скролл внутри контентной части модалки */
+#modalContent .flex-1 {
+  min-height: 0;
+}
+
+/* Нижняя зона модалки с кнопкой */
+#modalContent .modal-footer {
+  padding: 12px 16px;
+}
+
+/* Кнопка "В корзину" — компактная */
+#modalContent .modal-footer button {
+  height: 44px;
+  font-size: 14px;
+  border-radius: 14px;
 }
 
 /* Fullscreen модалка */
@@ -165,8 +185,7 @@ img,
   display: flex;
   align-items: center;
   justify-content: center;
-  padding-left: 20px;
-  padding-right: 20px;
+  padding: 20px;
   opacity: 0;
   visibility: hidden;
   transition: all 0.3s ease;
@@ -326,34 +345,8 @@ img,
   justify-content: center;
 }
 
-/* Отступ под таббар и верхний safe area */
+/* Отступ под таббар */
 .main-content {
   padding-bottom: 80px;
   padding-top: 8px;
-}
-
-/* Чтобы середина модалки могла скроллиться */
-#modalContent {
-  min-height: 0;
-}
-
-#modalContent .flex-1 {
-  min-height: 0;
-}
-
-/* Низ модалки с учётом нижней safe area / таббара */
-#modalContent > .flex.flex-col {
-  padding-bottom: calc(16px + var(--tg-safe-area-inset-bottom));
-}
-
-/* Нижняя зона модалки с кнопкой */
-#modalContent .modal-footer {
-  padding: 12px 16px;
-}
-
-/* Кнопка "В корзину" в модалке — чуть меньше и визуально центрирована */
-#modalContent .modal-footer button {
-  height: 44px;
-  font-size: 14px;
-  border-radius: 14px;
 }
