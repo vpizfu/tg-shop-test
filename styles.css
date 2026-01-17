@@ -12,20 +12,12 @@ body {
   0% { background-position: 200% 0; }
   100% { background-position: -200% 0; }
 }
-img.loaded {
-  animation: fadeIn 0.3s ease-in;
-}
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
-}
+img.loaded { animation: fadeIn 0.3s ease-in; }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* Запрет зума */
-* {
-  touch-action: manipulation !important;
-}
-img,
-.image-carousel {
+* { touch-action: manipulation !important; }
+img, .image-carousel {
   pointer-events: auto !important;
   touch-action: manipulation !important;
   -webkit-user-select: none;
@@ -40,7 +32,7 @@ img,
   padding-bottom: 5rem;
 }
 
-/* Карусель изображений - единый стиль */
+/* Карусель изображений - ЕДИНСТВЕННЫЙ СТИЛЬ ДЛЯ ВСЕХ */
 .image-carousel {
   position: relative;
   overflow: hidden;
@@ -126,10 +118,7 @@ img,
   overscroll-behavior-x: contain;
 }
 .scroll-carousel::-webkit-scrollbar { display: none; }
-.scroll-item {
-  scroll-snap-align: start;
-  flex-shrink: 0;
-}
+.scroll-item { scroll-snap-align: start; flex-shrink: 0; }
 
 /* Fullscreen модалка */
 #fullscreenModal {
@@ -204,14 +193,12 @@ img,
   z-index: 1001;
 }
 
-/* Блок с изображением в модалке */
 .modal-image-section {
   padding: 16px 24px 0;
   border-bottom: 1px solid #e5e7eb;
   margin-bottom: 12px;
 }
 
-/* Состояние, когда нет изображений */
 .no-images {
   display: flex;
   flex-direction: column;
@@ -232,7 +219,7 @@ img,
 #search { color: #111827; }
 #search::placeholder { color: #9ca3af; }
 
-/* Таббар */
+/* ТАББАР */
 #tabBar {
   position: fixed;
   bottom: 0;
