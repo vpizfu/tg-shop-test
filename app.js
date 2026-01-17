@@ -246,16 +246,19 @@ window.setPickupLocation = function(addr) {
 function showCartTab() {
   if (!cartItems.length) {
     root.innerHTML =
-      '<div class="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 pb-[65px]">' +
-        '<div class="w-24 h-24 bg-blue-100 rounded-3xl flex items-center justify-center mb-6">' +
-          '<svg class="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
-            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
-                  ' d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>' +
-          '</svg>' +
-        '</div>' +
-        '<h2 class="text-2xl font-bold text-gray-800 mb-4">Корзина</h2>' +
-        '<p class="text-lg text-gray-600 mb-8">Корзина пока пуста</p>' +
-      '</div>';
+    '<div class="relative min-h-[100vh] p-6 space-y-6 pb-[140px]">' +
+      '... контент корзины ...' +
+    '</div>' +
+    '<div class="cart-checkout-bar">' +
+      '<button onclick="placeOrder()"' +
+              ' class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all"' +
+              (cartItems.some(i => !i.available) ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '') +
+              '>' +
+        (cartItems.some(i => !i.available)
+          ? 'Удалите недоступные товары'
+          : 'Оформить заказ') +
+      '</button>' +
+    '</div>';
     return;
   }
 
@@ -266,7 +269,7 @@ function showCartTab() {
   const total = subtotal + commission;
 
   root.innerHTML =
-    '<div class="relative min-h-[100vh] p-6 space-y-6 pb-[65px]">' +
+    '<div class="relative min-h-[100vh] p-6 space-y-6 pb-[140px]">' +
       '<h2 class="text-2xl font-bold text-gray-800 mb-4">Корзина</h2>' +
       '<div class="space-y-3">' +
         cartItems.map((item, idx) =>
