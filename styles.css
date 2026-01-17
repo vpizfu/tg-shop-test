@@ -20,19 +20,19 @@ img.loaded {
   to { opacity: 1; }
 }
 
-/* Запрет зума / жесты – аккуратный */
-html,
-body {
-  touch-action: manipulation;
+/* Запрет зума */
+* {
+  touch-action: manipulation !important;
 }
 img,
 .image-carousel {
-  pointer-events: auto;
+  pointer-events: auto !important;
+  touch-action: manipulation !important;
   -webkit-user-select: none;
   -webkit-touch-callout: none;
 }
 
-/* Сетка товаров: всегда 2 колонки */
+/* Сетка всегда 2 колонки */
 .product-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -40,7 +40,7 @@ img,
   padding-bottom: 5rem;
 }
 
-/* Карусель изображений (общий стиль) */
+/* Карусель изображений - единый стиль */
 .image-carousel {
   position: relative;
   overflow: hidden;
@@ -60,7 +60,7 @@ img,
   flex-shrink: 0;
 }
 
-/* Кнопки навигации карусели */
+/* Кнопки навигации */
 .nav-btn {
   position: absolute;
   top: 50%;
@@ -81,13 +81,11 @@ img,
   transition: all 0.2s ease;
   cursor: pointer;
 }
-.image-carousel:hover .nav-btn {
-  opacity: 1;
-}
+.image-carousel:hover .nav-btn { opacity: 1; }
 .nav-prev { left: 8px; }
 .nav-next { right: 8px; }
 
-/* Индикаторы карусели */
+/* Индикаторы */
 .carousel-dots {
   position: absolute;
   bottom: 8px;
@@ -104,11 +102,9 @@ img,
   transition: all 0.2s ease;
   cursor: pointer;
 }
-.dot.active {
-  background: #3B82F6;
-}
+.dot.active { background: #3B82F6; }
 
-/* Секции опций (последовательный выбор) */
+/* Секвенициальный выбор опций */
 .option-section {
   transition: all 0.3s ease;
 }
@@ -121,18 +117,17 @@ img,
   pointer-events: auto;
 }
 
-/* Горизонтальный скролл опций — без snap */
+/* Скролл опций */
 .scroll-carousel {
-  overflow-x: auto;
-  display: flex;
-  gap: 8px;
-  padding-bottom: 4px;
+  scroll-snap-type: x mandatory;
   scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
 }
-.scroll-carousel::-webkit-scrollbar {
-  display: none;
-}
+.scroll-carousel::-webkit-scrollbar { display: none; }
 .scroll-item {
+  scroll-snap-align: start;
   flex-shrink: 0;
 }
 
@@ -180,24 +175,19 @@ img,
   background: rgba(255,255,255,0.2);
   backdrop-filter: blur(20px);
   border: none;
-  width: 44px;
-  height: 44px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   color: white;
-  font-size: 20px;
+  font-size: 24px;
   font-weight: bold;
   z-index: 1001;
   cursor: pointer;
   transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
-.fullscreen-nav:hover {
-  background: rgba(255,255,255,0.3);
-}
-.fullscreen-prev { left: 16px; }
-.fullscreen-next { right: 16px; }
+.fullscreen-nav:hover { background: rgba(255,255,255,0.3); }
+.fullscreen-prev { left: 20px; }
+.fullscreen-next { right: 20px; }
 .fullscreen-close {
   position: fixed;
   top: 20px;
@@ -239,12 +229,8 @@ img,
 }
 
 /* Поиск */
-#search {
-  color: #111827;
-}
-#search::placeholder {
-  color: #9ca3af;
-}
+#search { color: #111827; }
+#search::placeholder { color: #9ca3af; }
 
 /* Таббар */
 #tabBar {
@@ -307,7 +293,7 @@ img,
   justify-content: center;
 }
 
-/* Отступ под таббар */
+/* Скрытие контента под таббаром */
 .main-content {
   padding-bottom: 100px;
 }
