@@ -1,12 +1,9 @@
 const tg = window.Telegram?.WebApp;
 try { tg?.ready(); tg?.expand(); } catch (e) {}
 
-
 const API_URL = 'https://script.google.com/macros/s/AKfycbzp4E0zx1A5Jl-XD11IwUntT5cnF8lZQIdcdJQZcegXnUTy5dn23EhceyZ3P_MaC7ZZxQ/exec';
 
-
 let CATEGORIES = ['Все'];
-
 
 let selectedCategory = 'Все',
     query = '',
@@ -16,16 +13,79 @@ let selectedCategory = 'Все',
     productsData = null,
     currentProduct = null,
     selectedOption = {},
+    selectedQuantity = 1,
     searchTimeout = null,
-    cartCount = 0,
     currentTab = 'shop';
 
+let cartItems = [];        // {id,name,price,storage,color,region,quantity,available}
+let savedAddresses = [];   // [string]
+let previousOrders = [];   // {id,date,items,total,address}
 
 const root = document.getElementById('root');
 const modal = document.getElementById('productModal');
 
+// ---------- localStorage ----------
 
-// Запрет зума
+function saveCartToStorage() {
+  try {
+    localStorage.setItem('cartItems', JSON.stringify(cartItems));
+  } catch (e) {}
+}
+
+function loadCartFromStorage() {
+  try {
+    const raw = localStorage.getItem('cartItems');
+    if (raw) {
+      cartItems = JSON.parse(raw);
+    } else {
+      cartItems = [];
+    }
+  } catch (e) {
+    cartItems = [];
+  }
+  updateCartBadge();
+}
+
+function saveAddressesToStorage() {
+  try {
+    localStorage.setItem('addresses', JSON.stringify(savedAddresses));
+  } catch (e) {}
+}
+
+function loadAddressesFromStorage() {
+  try {
+    const raw = localStorage.getItem('addresses');
+    if (raw) {
+      savedAddresses = JSON.parse(raw);
+    } else {
+      savedAddresses = [];
+    }
+  } catch (e) {
+    savedAddresses = [];
+  }
+}
+
+function saveOrdersToStorage() {
+  try {
+    localStorage.setItem('orders', JSON.stringify(previousOrders));
+  } catch (e) {}
+}
+
+function loadOrdersFromStorage() {
+  try {
+    const raw = localStorage.getItem('orders');
+    if (raw) {
+      previousOrders = JSON.parse(raw);
+    } else {
+      previousOrders = [];
+    }
+  } catch (e) {
+    previousOrders = [];
+  }
+}
+
+// ---------- Запрет зума ----------
+
 document.addEventListener('gesturestart', e => e.preventDefault());
 document.addEventListener('gesturechange', e => e.preventDefault());
 document.addEventListener('gestureend', e => e.preventDefault());
@@ -39,8 +99,8 @@ document.addEventListener('touchend', e => {
   lastTouchEnd = now;
 }, { passive: false });
 
+// ---------- Таббар ----------
 
-// Таббар
 function initTabBar() {
   document.querySelectorAll('#tabBar .tab-item').forEach(tab => {
     tab.onclick = (e) => {
@@ -51,11 +111,13 @@ function initTabBar() {
   updateCartBadge();
 }
 
-
 function switchTab(tabName) {
+  if (currentTab === tabName) return; // уже эта вкладка
+
   currentTab = tabName;
   document.querySelectorAll('#tabBar .tab-item').forEach(t => t.classList.remove('active'));
-  document.querySelector('[data-tab="' + tabName + '"]').classList.add('active');
+  const currentEl = document.querySelector('[data-tab="' + tabName + '"]');
+  if (currentEl) currentEl.classList.add('active');
 
   if (tabName === 'shop') {
     renderShop();
@@ -70,52 +132,161 @@ function switchTab(tabName) {
   }
 }
 
+// ---------- Корзина ----------
 
 function updateCartBadge() {
   const badge = document.getElementById('cartBadge');
-  if (cartCount > 0) {
-    badge.textContent = cartCount;
+  if (!badge) return;
+  const count = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  if (count > 0) {
+    badge.textContent = count;
     badge.style.display = 'flex';
   } else {
     badge.style.display = 'none';
   }
 }
 
+function addToCart(variant, quantity) {
+  const existing = cartItems.find(item => item.id === variant.id);
+  if (existing) {
+    existing.quantity = Math.min(existing.quantity + quantity, 100);
+  } else {
+    cartItems.push({
+      id: variant.id,
+      name: variant.name,
+      price: variant.price,
+      storage: variant.storage,
+      color: variant.color,
+      region: variant.region,
+      quantity: quantity,
+      available: true
+    });
+  }
 
-function addToCart() {
-  cartCount++;
+  saveCartToStorage();
   updateCartBadge();
   tg?.HapticFeedback?.notificationOccurred('success');
-  tg?.showAlert?.('✅ Добавлено в корзину!\nВсего товаров: ' + cartCount);
 }
 
+window.changeCartItemQuantity = function(index, delta) {
+  const item = cartItems[index];
+  if (!item) return;
+  let q = item.quantity + delta;
+  if (q < 1) q = 1;
+  if (q > 100) q = 100;
+  item.quantity = q;
+  saveCartToStorage();
+  updateCartBadge();
+  showCartTab();
+};
 
-// Вкладка корзины
+window.removeCartItem = function(index) {
+  cartItems.splice(index, 1);
+  saveCartToStorage();
+  updateCartBadge();
+  showCartTab();
+};
+
+function syncCartWithProducts() {
+  if (!productsData) return;
+
+  cartItems = cartItems.map(item => {
+    const exists = productsData.some(p => p.id === item.id && p.inStock);
+    return { ...item, available: exists };
+  });
+
+  saveCartToStorage();
+  updateCartBadge();
+}
+
+// ---------- Вкладка корзины ----------
+
 function showCartTab() {
+  if (!cartItems.length) {
+    root.innerHTML =
+      '<div class="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">' +
+        '<div class="w-24 h-24 bg-blue-100 rounded-3xl flex items-center justify-center mb-6">' +
+          '<svg class="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
+                  ' d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>' +
+          '</svg>' +
+        '</div>' +
+        '<h2 class="text-2xl font-bold text-gray-800 mb-4">Корзина</h2>' +
+        '<p class="text-lg text-gray-600 mb-8">Корзина пока пуста</p>' +
+      '</div>';
+    return;
+  }
+
+  const total = cartItems.reduce((sum, item) =>
+    sum + (item.price * item.quantity), 0
+  );
+
   root.innerHTML =
-    '<div class="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">' +
-      '<div class="w-24 h-24 bg-blue-100 rounded-3xl flex items-center justify-center mb-6">' +
-        '<svg class="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
-          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
-                ' d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>' +
-        '</svg>' +
-      '</div>' +
+    '<div class="p-6 space-y-6">' +
       '<h2 class="text-2xl font-bold text-gray-800 mb-4">Корзина</h2>' +
-      '<p class="text-lg text-gray-600 mb-8">Товаров: ' +
-        '<span class="font-bold text-blue-600">' + cartCount + '</span></p>' +
-      '<div class="space-y-3 w-full max-w-sm">' +
-        '<button onclick="addToCart()" class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all">' +
-          'Добавить тестовый товар' +
-        '</button>' +
-        '<button class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-4 px-6 rounded-2xl shadow-lg transition-all">' +
-          'Оформить заказ' +
+      '<div class="space-y-3">' +
+        cartItems.map((item, idx) =>
+          '<div class="flex items-center justify-between p-3 rounded-xl border ' +
+                 (item.available ? 'border-gray-200' : 'border-red-300 bg-red-50') +
+                 '">' +
+            '<div class="text-left">' +
+              '<div class="font-semibold text-sm">' + escapeHtml(item.name) + '</div>' +
+              '<div class="text-xs text-gray-500">' +
+                escapeHtml(item.storage) + ' | ' +
+                escapeHtml(item.color) + ' | ' +
+                escapeHtml(item.region) +
+              '</div>' +
+              '<div class="text-xs mt-1 ' + (item.available ? 'text-green-600' : 'text-red-600') + '">' +
+                (item.available ? 'В наличии' : 'Товар недоступен, удалите из корзины') +
+              '</div>' +
+            '</div>' +
+            '<div class="text-right">' +
+              '<div class="flex items-center justify-end gap-2 mb-1">' +
+                '<button class="px-2 py-1 rounded-full bg-gray-200 text-sm font-bold"' +
+                        ' onclick="changeCartItemQuantity(' + idx + ', -1)">-</button>' +
+                '<span class="min-w-[24px] text-center text-sm font-semibold">' + item.quantity + '</span>' +
+                '<button class="px-2 py-1 rounded-full bg-gray-200 text-sm font-bold"' +
+                        ' onclick="changeCartItemQuantity(' + idx + ', 1)">+</button>' +
+              '</div>' +
+              '<div class="text-sm font-bold text-blue-600 mb-1">$' + (item.price * item.quantity) + '</div>' +
+              '<button class="text-xs text-red-500" onclick="removeCartItem(' + idx + ')">Удалить</button>' +
+            '</div>' +
+          '</div>'
+        ).join('') +
+      '</div>' +
+
+      '<div class="pt-4 border-t space-y-4">' +
+        '<div class="flex items-center justify-between">' +
+          '<span class="text-lg font-semibold">Итого:</span>' +
+          '<span class="text-xl font-bold text-blue-600">$' + total + '</span>' +
+        '</div>' +
+
+        '<div class="space-y-3">' +
+          '<label class="text-sm font-semibold text-gray-700 block">Адрес доставки</label>' +
+          '<select id="savedAddress" class="w-full bg-white border rounded-xl px-3 py-2 text-sm mb-2">' +
+            '<option value="">Выбрать сохранённый адрес</option>' +
+            (savedAddresses || []).map(addr =>
+              '<option value="' + escapeHtml(addr) + '">' + escapeHtml(addr) + '</option>'
+            ).join('') +
+          '</select>' +
+          '<textarea id="deliveryAddress" class="w-full bg-white border rounded-xl px-3 py-2 text-sm"' +
+                    ' rows="3" placeholder="Введите адрес доставки..."></textarea>' +
+        '</div>' +
+
+        '<button onclick="placeOrder()"' +
+                ' class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all"' +
+                (cartItems.some(i => !i.available) ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '') +
+                '>' +
+          (cartItems.some(i => !i.available)
+            ? 'Удалите недоступные товары'
+            : 'Оформить заказ') +
         '</button>' +
       '</div>' +
     '</div>';
 }
 
+// ---------- Вкладка распродажи ----------
 
-// Вкладка распродажи
 function showSaleTab() {
   root.innerHTML =
     '<div class="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">' +
@@ -133,14 +304,43 @@ function showSaleTab() {
     '</div>';
 }
 
+// ---------- Вкладка профиль ----------
 
-// Вкладка профиль
 function showProfileTab() {
-  const userId = tg?.initDataUnsafe?.user?.id || 'гость';
+  const user = tg?.initDataUnsafe?.user;
+  const username = user?.username || 'неизвестно';
+  const firstName = user?.first_name || '';
+  const lastName = user?.last_name || '';
+  const fullName = (firstName + ' ' + lastName).trim();
+  const displayId = '@' + username + (fullName ? ' (' + fullName + ')' : '');
+
+  const ordersHtml = previousOrders.length
+    ? previousOrders.map(o =>
+        '<div class="p-3 border rounded-xl mb-2">' +
+          '<div class="flex items-center justify_between mb-1">' +
+            '<span class="text-sm font-semibold">Заказ #' + o.id + '</span>' +
+            '<span class="text-xs text-gray-500">' + new Date(o.date).toLocaleString() + '</span>' +
+          '</div>' +
+          '<div class="text-xs text-gray-600 mb-1">Адрес: ' + escapeHtml(o.address) + '</div>' +
+          '<div class="text-xs text-gray-600 mb-1">Товаров: ' + o.items.length + '</div>' +
+          '<div class="text-sm font-bold text-blue-600">Сумма: $' + o.total + '</div>' +
+        '</div>'
+      ).join('')
+    : '<p class="text-sm text-gray-500">Заказов пока нет</p>';
+
+  const addressesHtml = savedAddresses.length
+    ? savedAddresses.map((addr, idx) =>
+        '<div class="flex items-center justify-between p-2 border rounded-xl mb-1">' +
+          '<span class="text-xs text-gray-700">' + escapeHtml(addr) + '</span>' +
+          '<button class="text-xs text-red-500" onclick="removeAddress(' + idx + ')">Удалить</button>' +
+        '</div>'
+      ).join('')
+    : '<p class="text-sm text-gray-500">Сохранённых адресов нет</p>';
+
   root.innerHTML =
     '<div class="p-6 space-y-6">' +
-      '<div class="flex items-center space-x-4">' +
-        '<div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">' +
+      '<div class="flex items_center space-x-4">' +
+        '<div class="w-16 h-16 bg-gradient_to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">' +
           '<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
             '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
                   ' d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>' +
@@ -148,32 +348,51 @@ function showProfileTab() {
         '</div>' +
         '<div>' +
           '<h2 class="text-xl font-bold">Пользователь</h2>' +
-          '<p class="text-gray-500">ID: ' + userId + '</p>' +
+          '<p class="text-gray-500 text-sm">ID: ' + escapeHtml(displayId) + '</p>' +
         '</div>' +
       '</div>' +
+
+      '<div class="space-y-4">' +
+        '<h3 class="text-lg font-semibold">Сохранённые адреса</h3>' +
+        '<div id="addressesList">' + addressesHtml + '</div>' +
+        '<div class="space-y-2">' +
+          '<textarea id="newAddress" class="w-full bg-white border rounded-xl px-3 py-2 text-sm" rows="2" placeholder="Новый адрес..."></textarea>' +
+          '<button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded-xl transition-all"' +
+                  ' onclick="addAddress()">' +
+            'Сохранить адрес' +
+          '</button>' +
+        '</div>' +
+      '</div>' +
+
       '<div class="space-y-3">' +
-        '<button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-xl transition-all flex items-center">' +
-          '<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
-            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
-                  ' d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>' +
-            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
-                  ' d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>' +
-          '</svg>' +
-          'Настройки' +
-        '</button>' +
-        '<button class="w-full bg-red-100 hover:bg-red-200 text-red-800 font-bold py-3 px-4 rounded-xl transition-all flex items-center">' +
-          '<svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
-            '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
-                  ' d="M6 18L18 6M6 6l12 12"/>' +
-          '</svg>' +
-          'Выйти' +
-        '</button>' +
+        '<h3 class="text-lg font-semibold">Предыдущие заказы</h3>' +
+        '<div>' + ordersHtml + '</div>' +
       '</div>' +
     '</div>';
 }
 
+window.addAddress = function() {
+  const ta = document.getElementById('newAddress');
+  if (!ta) return;
+  const val = ta.value.trim();
+  if (!val) {
+    tg?.showAlert?.('Введите адрес');
+    return;
+  }
+  savedAddresses.push(val);
+  saveAddressesToStorage();
+  ta.value = '';
+  showProfileTab();
+};
 
-// Вкладка "О нас"
+window.removeAddress = function(index) {
+  savedAddresses.splice(index, 1);
+  saveAddressesToStorage();
+  showProfileTab();
+};
+
+// ---------- Вкладка "О нас" ----------
+
 function showAboutTab() {
   root.innerHTML =
     '<div class="p-6 space-y-6">' +
@@ -194,11 +413,11 @@ function showAboutTab() {
     '</div>';
 }
 
+// ---------- Ошибка ----------
 
-// Ошибка
 function showError(message) {
   root.innerHTML = '' +
-    '<div class="flex flex-col items-center justify-center min-h-screen text_center p-8">' +
+    '<div class="flex flex-col items-center justify-center min-h-screen text-center p-8">' +
       '<div class="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mb-6">' +
         '<svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
           '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
@@ -215,23 +434,23 @@ function showError(message) {
   tg?.showAlert?.('❌ ' + message);
 }
 
+// ---------- Утилита ----------
 
-// Утилита
 function escapeHtml(s) {
   const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'};
   return String(s).replace(/[&<>"']/g, m => map[m]);
 }
 
+// ---------- Бэкдроп модалки ----------
 
-// Клик по бэкдропу
 if (modal) {
   modal.addEventListener('click', e => {
     if (e.target === modal) closeModal();
   });
 }
 
+// ---------- ESC ----------
 
-// ESC
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape') {
     if (!modal.classList.contains('hidden')) {
@@ -240,16 +459,70 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ---------- Заказ ----------
 
-// Инициализация
-async function initApp() {
-  initTabBar();
+window.placeOrder = function() {
+  if (cartItems.length === 0) {
+    tg?.showAlert?.('Корзина пуста');
+    return;
+  }
+  if (cartItems.some(i => !i.available)) {
+    tg?.showAlert?.('Удалите недоступные товары из корзины');
+    return;
+  }
 
-  root.innerHTML =
-    '<div class="flex flex-col items-center justify-center min-h-[400px]">' +
-      '<div class="w-20 h-20 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>' +
-      '<div class="text-lg font-semibold text-gray-700 mb-2">Загрузка товаров...</div>' +
-    '</div>';
+  const select = document.getElementById('savedAddress');
+  const textarea = document.getElementById('deliveryAddress');
+  let address = (textarea && textarea.value.trim()) || '';
+  if (!address && select && select.value) {
+    address = select.value;
+  }
+
+  if (!address) {
+    tg?.showAlert?.('Введите или выберите адрес доставки');
+    return;
+  }
+
+  const total = cartItems.reduce((sum, item) =>
+    sum + item.price * item.quantity, 0
+  );
+
+  const order = {
+    id: Date.now(),
+    date: new Date().toISOString(),
+    items: cartItems.slice(),
+    total,
+    address
+  };
+
+  previousOrders.push(order);
+  saveOrdersToStorage();
+
+  try {
+    tg?.sendData?.(JSON.stringify({
+      type: 'order',
+      order
+    }));
+  } catch (e) {}
+
+  tg?.showAlert?.('✅ Вы успешно оформили заказ!');
+
+  cartItems = [];
+  saveCartToStorage();
+  updateCartBadge();
+  showCartTab();
+};
+
+// ---------- Загрузка товаров с API ----------
+
+async function fetchAndUpdateProducts(showLoader = false) {
+  if (showLoader) {
+    root.innerHTML =
+      '<div class="flex flex-col items-center justify-center min-h-[400px]">' +
+        '<div class="w-20 h-20 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>' +
+        '<div class="text-lg font-semibold text-gray-700 mb-2">Загрузка товаров...</div>' +
+      '</div>';
+  }
 
   try {
     const response = await fetch(API_URL);
@@ -262,27 +535,52 @@ async function initApp() {
 
     const normalized = normalizeProducts(products);
 
-    // оставляем только товары, у которых есть хотя бы один inStock вариант
     const inStockNames = new Set(
       normalized.filter(v => v.inStock).map(v => v.name)
     );
-    productsData = normalized.filter(v => inStockNames.has(v.name));
+    const newProductsData = normalized.filter(v => inStockNames.has(v.name));
 
-    // категории из данных
-    const cats = Array.from(new Set(productsData.map(p => p.cat).filter(Boolean)));
-    CATEGORIES = ['Все', ...cats];
+    const oldJson = JSON.stringify(productsData || []);
+    const newJson = JSON.stringify(newProductsData);
 
-    if (selectedCategory === 'Все') {
-      randomIds = pickRandomIds(productsData, Math.min(20, productsData.length));
+    if (oldJson !== newJson) {
+      productsData = newProductsData;
+
+      const cats = Array.from(new Set(productsData.map(p => p.cat).filter(Boolean)));
+      CATEGORIES = ['Все', ...cats];
+
+      if (selectedCategory === 'Все') {
+        randomIds = pickRandomIds(productsData, Math.min(20, productsData.length));
+      }
+
+      syncCartWithProducts();
+
+      if (currentTab === 'shop') {
+        renderShop();
+      } else if (currentTab === 'cart') {
+        showCartTab();
+      }
     }
   } catch (error) {
     console.error('API error:', error);
-    showError(error.message);
-    return;
+    if (showLoader) showError(error.message);
   }
-
-  renderShop();
 }
 
+// ---------- Инициализация ----------
+
+async function initApp() {
+  initTabBar();
+  loadOrdersFromStorage();
+  loadAddressesFromStorage();
+  loadCartFromStorage();
+
+  await fetchAndUpdateProducts(true);
+  renderShop();
+
+  setInterval(() => {
+    fetchAndUpdateProducts(false);
+  }, 5 * 60 * 1000);
+}
 
 initApp();

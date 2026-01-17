@@ -2,7 +2,6 @@ let modalCurrentIndex = 0;
 let modalImageCount = 0;
 let modalImageIndexBeforeFullscreen = 0;
 
-
 function selectOptionNoFocus(type, option) {
   if (document.activeElement && document.activeElement.blur) {
     document.activeElement.blur();
@@ -32,7 +31,6 @@ function selectOptionNoFocus(type, option) {
   tg?.HapticFeedback?.impactOccurred('light');
 }
 
-
 function clearOptionNoFocus(type) {
   if (document.activeElement && document.activeElement.blur) {
     document.activeElement.blur();
@@ -54,10 +52,8 @@ function clearOptionNoFocus(type) {
   tg?.HapticFeedback?.impactOccurred('light');
 }
 
-
 window.selectOptionNoFocus = selectOptionNoFocus;
 window.clearOptionNoFocus = clearOptionNoFocus;
-
 
 window.addToCartFromModal = function() {
   if (!isCompleteSelection()) {
@@ -76,17 +72,27 @@ window.addToCartFromModal = function() {
   }
 
   const selectedVariant = variants[0];
-  addToCart();
+
+  addToCart(selectedVariant, selectedQuantity);
   tg?.showAlert?.(
     '✅ ' + selectedVariant.name + '\n' +
     selectedVariant.storage + ' | ' +
     selectedVariant.color + ' | ' +
-    selectedVariant.region + '\n$' +
-    selectedVariant.price
+    selectedVariant.region + '\n' +
+    'Количество: ' + selectedQuantity + '\n$' +
+    (selectedVariant.price * selectedQuantity)
   );
   closeModal();
 };
 
+window.changeQuantity = function(delta) {
+  let q = selectedQuantity + delta;
+  if (q < 1) q = 1;
+  if (q > 100) q = 100;
+  selectedQuantity = q;
+  const span = document.getElementById('quantityValue');
+  if (span) span.textContent = selectedQuantity;
+};
 
 function renderProductModal(product) {
   currentProduct = product;
@@ -246,6 +252,19 @@ function renderProductModal(product) {
             );
           }).join('') +
 
+          // Количество
+          '<div class="quantity-section">' +
+            '<label class="text-sm font-semibold text-gray-700 mb-2 block">Количество</label>' +
+            '<div class="flex items-center gap-3">' +
+              '<button class="px-3 py-1.5 rounded-full bg-gray-200 text-lg font-bold"' +
+                      ' onclick="changeQuantity(-1); return false;">-</button>' +
+              '<span id="quantityValue" class="min-w-[40px] text-center font-semibold">' + selectedQuantity + '</span>' +
+              '<button class="px-3 py-1.5 rounded-full bg-gray-200 text-lg font-bold"' +
+                      ' onclick="changeQuantity(1); return false;">+</button>' +
+            '</div>' +
+            '<p class="text-xs text-gray-400 mt-1">Максимум 100 шт.</p>' +
+          '</div>' +
+
           '<div class="pt-4 border-t">' +
             '<div class="text-center text-sm text-gray-500 mb-4">' +
               'Доступно: <span id="variantCount" class="font-bold text-blue-600">' +
@@ -286,7 +305,6 @@ function renderProductModal(product) {
   }
 }
 
-
 // Модальная карусель
 function initModalCarousel(imageCount) {
   if (imageCount <= 1) return;
@@ -322,7 +340,6 @@ function initModalCarousel(imageCount) {
   updateModalCarousel();
 }
 
-
 function showModal(product) {
   renderProductModal(product);
   modal.classList.remove('hidden');
@@ -330,11 +347,11 @@ function showModal(product) {
   tg?.expand();
 }
 
-
 window.closeModal = function() {
   modal.classList.add('hidden');
   document.body.style.overflow = '';
   selectedOption = {};
   currentProduct = null;
+  selectedQuantity = 1;
   tg?.HapticFeedback?.impactOccurred('light');
 };

@@ -7,10 +7,8 @@ const PLACEHOLDERS = {
   'AirPods': 'https://via.placeholder.com/300x300/30D158/FFFFFF?text=AirPods'
 };
 
-
 // порядок выбора опций в модалке
 const FILTER_ORDER = ['simType', 'storage', 'color', 'region'];
-
 
 // нормализация ответа из Google Apps Script
 function normalizeProducts(products) {
@@ -32,12 +30,10 @@ function normalizeProducts(products) {
   );
 }
 
-
 // все варианты по имени товара
 function getProductVariants(productName) {
   return productsData ? productsData.filter(p => p.name === productName) : [];
 }
-
 
 // все картинки по вариантам
 function getFilteredProductImages(variants) {
@@ -52,7 +48,6 @@ function getFilteredProductImages(variants) {
   return Array.from(images);
 }
 
-
 // текущие варианты по выбранным опциям
 function getFilteredVariants(variants) {
   return variants.filter(variant => {
@@ -63,7 +58,6 @@ function getFilteredVariants(variants) {
   });
 }
 
-
 // доступные значения для одного типа опции
 function getAvailableOptions(type, variants) {
   const filteredVariants = getFilteredVariants(variants);
@@ -71,12 +65,10 @@ function getAvailableOptions(type, variants) {
   return options.sort();
 }
 
-
 // все ли опции выбраны
 function isCompleteSelection() {
   return FILTER_ORDER.every(type => selectedOption[type]);
 }
-
 
 // индекс секции, до которой выбор сделан
 function getCurrentSectionIndex() {
@@ -85,7 +77,6 @@ function getCurrentSectionIndex() {
   }
   return FILTER_ORDER.length;
 }
-
 
 // список товаров для отображения в магазине
 function getVisibleProducts() {
@@ -124,7 +115,6 @@ function getVisibleProducts() {
   return base;
 }
 
-
 // выбор случайных id для главной выдачи
 function pickRandomIds(items, count) {
   const ids = items.map(x => x.id);
@@ -136,7 +126,6 @@ function pickRandomIds(items, count) {
   }
   return ids.slice(0, Math.min(count, ids.length));
 }
-
 
 // предзагрузка картинок
 function preloadAllImages(products) {
@@ -154,13 +143,11 @@ function preloadAllImages(products) {
   });
 }
 
-
 // подписи к опциям
 function getLabel(type) {
   const labels = { simType: 'SIM/eSIM', storage: 'Память', color: 'Цвет', region: 'Регион' };
   return labels[type] || type;
 }
-
 
 // рендер магазина
 function renderShop() {
@@ -208,7 +195,6 @@ function renderShop() {
   preloadAllImages(list.slice(0, showCount));
   setupImageCarousels();
 }
-
 
 // карточка товара
 function productCard(product) {
@@ -258,7 +244,6 @@ function productCard(product) {
   );
 }
 
-
 // навешивание обработчиков
 function setupHandlers() {
   const categoryEl = document.getElementById('category');
@@ -295,13 +280,13 @@ function setupHandlers() {
       const product = productsData.find(p => p.name === productName);
       if (product) {
         selectedOption = {};
+        selectedQuantity = 1;
         showModal(product);
         tg?.HapticFeedback?.impactOccurred('medium');
       }
     });
   });
 }
-
 
 // карусели на карточках
 function setupImageCarousels() {
@@ -347,7 +332,6 @@ function setupImageCarousels() {
     updateCarousel();
   });
 }
-
 
 window.carouselNext = function(id) {
   window['carouselNext_' + id] && window['carouselNext_' + id]();
