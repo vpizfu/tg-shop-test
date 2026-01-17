@@ -7,8 +7,10 @@ const PLACEHOLDERS = {
   'AirPods': 'https://via.placeholder.com/300x300/30D158/FFFFFF?text=AirPods'
 };
 
+
 // порядок выбора опций в модалке
 const FILTER_ORDER = ['simType', 'storage', 'color', 'region'];
+
 
 // нормализация ответа из Google Apps Script
 function normalizeProducts(products) {
@@ -30,10 +32,12 @@ function normalizeProducts(products) {
   );
 }
 
+
 // все варианты по имени товара
 function getProductVariants(productName) {
   return productsData ? productsData.filter(p => p.name === productName) : [];
 }
+
 
 // все картинки по вариантам
 function getFilteredProductImages(variants) {
@@ -48,6 +52,7 @@ function getFilteredProductImages(variants) {
   return Array.from(images);
 }
 
+
 // текущие варианты по выбранным опциям
 function getFilteredVariants(variants) {
   return variants.filter(variant => {
@@ -58,6 +63,7 @@ function getFilteredVariants(variants) {
   });
 }
 
+
 // доступные значения для одного типа опции
 function getAvailableOptions(type, variants) {
   const filteredVariants = getFilteredVariants(variants);
@@ -65,10 +71,12 @@ function getAvailableOptions(type, variants) {
   return options.sort();
 }
 
+
 // все ли опции выбраны
 function isCompleteSelection() {
   return FILTER_ORDER.every(type => selectedOption[type]);
 }
+
 
 // индекс секции, до которой выбор сделан
 function getCurrentSectionIndex() {
@@ -78,28 +86,44 @@ function getCurrentSectionIndex() {
   return FILTER_ORDER.length;
 }
 
+
 // список товаров для отображения в магазине
 function getVisibleProducts() {
   if (!productsData) return [];
-  let base = selectedCategory === 'Все'
-    ? productsData.filter(p => randomIds.indexOf(p.id) !== -1)
-    : productsData.filter(p => p.cat === selectedCategory);
 
-  // сгруппировать по имени (оставляем самое дешевое как «главную» карточку)
-  const grouped = {};
-  base.forEach(p => {
-    if (!grouped[p.name] || p.price < grouped[p.name].price) grouped[p.name] = p;
+  // сгруппировать по имени
+  const groupedByName = {};
+  productsData.forEach(p => {
+    if (!groupedByName[p.name]) groupedByName[p.name] = [];
+    groupedByName[p.name].push(p);
   });
+
+  // оставить только те товары, у которых есть хотя бы один inStock-вариант
+  const groupedVisible = Object.values(groupedByName)
+    .filter(arr => arr.some(v => v.inStock))
+    .map(arr => {
+      const inStockVariants = arr.filter(v => v.inStock);
+      return inStockVariants.reduce(
+        (min, p) => (p.price < min.price ? p : min),
+        inStockVariants[0]
+      );
+    });
+
+  let base = selectedCategory === 'Все'
+    ? groupedVisible.filter(p => randomIds.indexOf(p.id) !== -1)
+    : groupedVisible.filter(p => p.cat === selectedCategory);
 
   if (query.trim()) {
     const q = query.trim().toLowerCase();
-    return Object.values(grouped).filter(p =>
+    base = base.filter(p =>
       (p.name && p.name.toLowerCase().includes(q)) ||
       (p.cat && p.cat.toLowerCase().includes(q))
     );
   }
-  return Object.values(grouped);
+
+  return base;
 }
+
 
 // выбор случайных id для главной выдачи
 function pickRandomIds(items, count) {
@@ -113,10 +137,11 @@ function pickRandomIds(items, count) {
   return ids.slice(0, Math.min(count, ids.length));
 }
 
+
 // предзагрузка картинок
 function preloadAllImages(products) {
   products.forEach(product => {
-    const variants = getProductVariants(product.name);
+    const variants = getProductVariants(product.name).filter(v => v.inStock);
     const allImages = getFilteredProductImages(variants);
     allImages.forEach(imgSrc => {
       if (!imageCache.has(imgSrc) && imgSrc) {
@@ -129,11 +154,13 @@ function preloadAllImages(products) {
   });
 }
 
+
 // подписи к опциям
 function getLabel(type) {
   const labels = { simType: 'SIM/eSIM', storage: 'Память', color: 'Цвет', region: 'Регион' };
   return labels[type] || type;
 }
+
 
 // рендер магазина
 function renderShop() {
@@ -182,9 +209,13 @@ function renderShop() {
   setupImageCarousels();
 }
 
+
 // карточка товара
 function productCard(product) {
-  const variants = getProductVariants(product.name);
+  const allVariants = getProductVariants(product.name);
+  const variants = allVariants.filter(v => v.inStock);
+  if (variants.length === 0) return '';
+
   const allImages = getFilteredProductImages(variants);
 
   const commonImage = variants[0]?.commonImage || product.commonImage || '';
@@ -226,6 +257,7 @@ function productCard(product) {
     '</div>'
   );
 }
+
 
 // навешивание обработчиков
 function setupHandlers() {
@@ -269,6 +301,7 @@ function setupHandlers() {
     });
   });
 }
+
 
 // карусели на карточках
 function setupImageCarousels() {
@@ -314,6 +347,7 @@ function setupImageCarousels() {
     updateCarousel();
   });
 }
+
 
 window.carouselNext = function(id) {
   window['carouselNext_' + id] && window['carouselNext_' + id]();

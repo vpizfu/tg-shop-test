@@ -2,6 +2,7 @@ let modalCurrentIndex = 0;
 let modalImageCount = 0;
 let modalImageIndexBeforeFullscreen = 0;
 
+
 function selectOptionNoFocus(type, option) {
   if (document.activeElement && document.activeElement.blur) {
     document.activeElement.blur();
@@ -31,6 +32,7 @@ function selectOptionNoFocus(type, option) {
   tg?.HapticFeedback?.impactOccurred('light');
 }
 
+
 function clearOptionNoFocus(type) {
   if (document.activeElement && document.activeElement.blur) {
     document.activeElement.blur();
@@ -52,8 +54,10 @@ function clearOptionNoFocus(type) {
   tg?.HapticFeedback?.impactOccurred('light');
 }
 
+
 window.selectOptionNoFocus = selectOptionNoFocus;
 window.clearOptionNoFocus = clearOptionNoFocus;
+
 
 window.addToCartFromModal = function() {
   if (!isCompleteSelection()) {
@@ -82,6 +86,7 @@ window.addToCartFromModal = function() {
   );
   closeModal();
 };
+
 
 function renderProductModal(product) {
   currentProduct = product;
@@ -117,8 +122,23 @@ function renderProductModal(product) {
   });
 
   const complete = isCompleteSelection();
-
   const availableVariants = filteredVariants; // здесь уже только inStock
+
+  // минимальная цена по текущему фильтру
+  const currentMinPrice = availableVariants.length
+    ? Math.min.apply(null, availableVariants.map(v => v.price))
+    : Math.min.apply(null, variants.map(v => v.price));
+
+  // текст вверху слева
+  let headerPriceText;
+  if (!complete) {
+    headerPriceText = 'от $' + currentMinPrice;
+  } else if (complete && availableVariants.length > 0) {
+    const priceToShow = availableVariants[0].price;
+    headerPriceText = '$' + priceToShow;
+  } else {
+    headerPriceText = 'Нет вариантов';
+  }
 
   let filteredImages = [];
   if (complete && availableVariants.length > 0) {
@@ -145,8 +165,8 @@ function renderProductModal(product) {
           '</button>' +
         '</div>' +
         '<div class="flex items-center gap-2 text-sm text-gray-500">' +
-          '<span>от $' + Math.min.apply(null, variants.map(v => v.price)) + '</span>' +
-          '<span>• ' + variants.length + ' вариантов</span>' +
+          '<span>' + headerPriceText + '</span>' +
+          '<span>• ' + availableVariants.length + ' вариантов</span>' +
         '</div>' +
       '</div>' +
 
@@ -266,6 +286,7 @@ function renderProductModal(product) {
   }
 }
 
+
 // Модальная карусель
 function initModalCarousel(imageCount) {
   if (imageCount <= 1) return;
@@ -301,12 +322,14 @@ function initModalCarousel(imageCount) {
   updateModalCarousel();
 }
 
+
 function showModal(product) {
   renderProductModal(product);
   modal.classList.remove('hidden');
   document.body.style.overflow = 'hidden';
   tg?.expand();
 }
+
 
 window.closeModal = function() {
   modal.classList.add('hidden');

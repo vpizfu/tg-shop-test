@@ -1,9 +1,12 @@
 const tg = window.Telegram?.WebApp;
 try { tg?.ready(); tg?.expand(); } catch (e) {}
 
+
 const API_URL = 'https://script.google.com/macros/s/AKfycbzp4E0zx1A5Jl-XD11IwUntT5cnF8lZQIdcdJQZcegXnUTy5dn23EhceyZ3P_MaC7ZZxQ/exec';
 
+
 let CATEGORIES = ['Все'];
+
 
 let selectedCategory = 'Все',
     query = '',
@@ -17,8 +20,10 @@ let selectedCategory = 'Все',
     cartCount = 0,
     currentTab = 'shop';
 
+
 const root = document.getElementById('root');
 const modal = document.getElementById('productModal');
+
 
 // Запрет зума
 document.addEventListener('gesturestart', e => e.preventDefault());
@@ -34,6 +39,7 @@ document.addEventListener('touchend', e => {
   lastTouchEnd = now;
 }, { passive: false });
 
+
 // Таббар
 function initTabBar() {
   document.querySelectorAll('#tabBar .tab-item').forEach(tab => {
@@ -44,6 +50,7 @@ function initTabBar() {
   });
   updateCartBadge();
 }
+
 
 function switchTab(tabName) {
   currentTab = tabName;
@@ -63,6 +70,7 @@ function switchTab(tabName) {
   }
 }
 
+
 function updateCartBadge() {
   const badge = document.getElementById('cartBadge');
   if (cartCount > 0) {
@@ -73,12 +81,14 @@ function updateCartBadge() {
   }
 }
 
+
 function addToCart() {
   cartCount++;
   updateCartBadge();
   tg?.HapticFeedback?.notificationOccurred('success');
   tg?.showAlert?.('✅ Добавлено в корзину!\nВсего товаров: ' + cartCount);
 }
+
 
 // Вкладка корзины
 function showCartTab() {
@@ -104,6 +114,7 @@ function showCartTab() {
     '</div>';
 }
 
+
 // Вкладка распродажи
 function showSaleTab() {
   root.innerHTML =
@@ -121,6 +132,7 @@ function showSaleTab() {
       '</button>' +
     '</div>';
 }
+
 
 // Вкладка профиль
 function showProfileTab() {
@@ -160,6 +172,7 @@ function showProfileTab() {
     '</div>';
 }
 
+
 // Вкладка "О нас"
 function showAboutTab() {
   root.innerHTML =
@@ -181,10 +194,11 @@ function showAboutTab() {
     '</div>';
 }
 
+
 // Ошибка
 function showError(message) {
   root.innerHTML = '' +
-    '<div class="flex flex-col items-center justify-center min-h-screen text-center p-8">' +
+    '<div class="flex flex-col items-center justify-center min-h-screen text_center p-8">' +
       '<div class="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mb-6">' +
         '<svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
           '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
@@ -201,11 +215,13 @@ function showError(message) {
   tg?.showAlert?.('❌ ' + message);
 }
 
+
 // Утилита
 function escapeHtml(s) {
   const map = {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'};
   return String(s).replace(/[&<>"']/g, m => map[m]);
 }
+
 
 // Клик по бэкдропу
 if (modal) {
@@ -213,6 +229,7 @@ if (modal) {
     if (e.target === modal) closeModal();
   });
 }
+
 
 // ESC
 document.addEventListener('keydown', e => {
@@ -223,6 +240,7 @@ document.addEventListener('keydown', e => {
   }
 });
 
+
 // Инициализация
 async function initApp() {
   initTabBar();
@@ -232,7 +250,7 @@ async function initApp() {
       '<div class="w-20 h-20 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>' +
       '<div class="text-lg font-semibold text-gray-700 mb-2">Загрузка товаров...</div>' +
     '</div>';
- 
+
   try {
     const response = await fetch(API_URL);
     if (!response.ok) throw new Error('HTTP ' + response.status);
@@ -244,14 +262,10 @@ async function initApp() {
 
     const normalized = normalizeProducts(products);
 
-    // сначала найдём те название товаров, для которых есть хоть один inStock
+    // оставляем только товары, у которых есть хотя бы один inStock вариант
     const inStockNames = new Set(
-    normalized
-        .filter(v => v.inStock)
-        .map(v => v.name)
+      normalized.filter(v => v.inStock).map(v => v.name)
     );
-
-    // теперь productsData = только те варианты, чьё имя есть в inStockNames
     productsData = normalized.filter(v => inStockNames.has(v.name));
 
     // категории из данных
@@ -269,5 +283,6 @@ async function initApp() {
 
   renderShop();
 }
+
 
 initApp();
