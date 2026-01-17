@@ -61,8 +61,10 @@ window.addToCartFromModal = function() {
     return;
   }
 
-  const allVariants = getFilteredVariants(getProductVariants(currentProduct.name));
-  const variants = allVariants.filter(v => v.inStock); // только ✅
+  const allVariants = getFilteredVariants(
+    getProductVariants(currentProduct.name).filter(v => v.inStock)
+  );
+  const variants = allVariants; // уже только ✅
 
   if (variants.length === 0) {
     tg?.showAlert?.('❌ Нет доступных вариантов');
@@ -83,7 +85,30 @@ window.addToCartFromModal = function() {
 
 function renderProductModal(product) {
   currentProduct = product;
-  const variants = getProductVariants(product.name);
+
+  // все варианты товара
+  const allVariants = getProductVariants(product.name);
+  // только доступные варианты (✅)
+  const variants = allVariants.filter(v => v.inStock);
+
+  if (variants.length === 0) {
+    document.getElementById('modalContent').innerHTML =
+      '<div class="flex flex-col h-full">' +
+        '<div class="p-6 pb-4 border-b border-gray-200">' +
+          '<div class="flex items-center justify-between mb-2">' +
+            '<h2 class="text-2xl font-bold">' + escapeHtml(product.name) + '</h2>' +
+            '<button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-xl">' +
+              '<svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>' +
+              '</svg>' +
+            '</button>' +
+          '</div>' +
+          '<div class="text-sm text-red-500">Нет доступных вариантов</div>' +
+        '</div>' +
+      '</div>';
+    return;
+  }
+
   const filteredVariants = getFilteredVariants(variants);
   const availableOptions = {};
 
@@ -93,8 +118,17 @@ function renderProductModal(product) {
 
   const complete = isCompleteSelection();
 
-  const availableVariants = filteredVariants.filter(v => v.inStock);
-  const filteredImages = complete ? getFilteredProductImages(availableVariants) : [];
+  const availableVariants = filteredVariants; // здесь уже только inStock
+
+  let filteredImages = [];
+  if (complete && availableVariants.length > 0) {
+    filteredImages = getFilteredProductImages(availableVariants);
+    if (filteredImages.length === 0 && variants[0].commonImage) {
+      filteredImages = [variants[0].commonImage];
+    }
+  }
+
+  const productCommonImage = variants[0].commonImage || product.commonImage || '';
 
   modalImageIndexBeforeFullscreen = modalCurrentIndex;
 
@@ -137,13 +171,18 @@ function renderProductModal(product) {
                     '</div>'
                   : ''
                 )
-              : '<div class="no-images h-64">' +
-                  '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
-                    '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
-                          ' d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>' +
-                  '</svg>' +
-                  '<div class="text-center text-sm font-medium">Выберите все параметры для просмотра фото</div>' +
-                '</div>'
+              : (productCommonImage
+                  ? '<div class="w-full h-64 rounded-xl overflow-hidden mb-6">' +
+                      '<img src="' + productCommonImage + '" class="w-full h-full object-cover" alt="Product image" />' +
+                    '</div>'
+                  : '<div class="no-images h-64">' +
+                      '<svg fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                        '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
+                              ' d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>' +
+                      '</svg>' +
+                      '<div class="text-center text-sm font-medium">Выберите все параметры для просмотра фото</div>' +
+                    '</div>'
+                )
             ) +
           '</div>' +
         '</div>' +

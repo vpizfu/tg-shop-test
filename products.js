@@ -1,3 +1,4 @@
+// Плейсхолдеры по категориям (fallback, если нет картинок и нет commonImage)
 const PLACEHOLDERS = {
   'iPhone': 'https://via.placeholder.com/300x300/007AFF/FFFFFF?text=iPhone',
   'iPad': 'https://via.placeholder.com/300x300/34C759/FFFFFF?text=iPad',
@@ -6,8 +7,10 @@ const PLACEHOLDERS = {
   'AirPods': 'https://via.placeholder.com/300x300/30D158/FFFFFF?text=AirPods'
 };
 
+// порядок выбора опций в модалке
 const FILTER_ORDER = ['simType', 'storage', 'color', 'region'];
 
+// нормализация ответа из Google Apps Script
 function normalizeProducts(products) {
   return products.flatMap(product =>
     product.variants.map(variant => ({
@@ -27,10 +30,12 @@ function normalizeProducts(products) {
   );
 }
 
+// все варианты по имени товара
 function getProductVariants(productName) {
   return productsData ? productsData.filter(p => p.name === productName) : [];
 }
 
+// все картинки по вариантам
 function getFilteredProductImages(variants) {
   const images = new Set();
   variants.forEach(variant => {
@@ -43,6 +48,7 @@ function getFilteredProductImages(variants) {
   return Array.from(images);
 }
 
+// текущие варианты по выбранным опциям
 function getFilteredVariants(variants) {
   return variants.filter(variant => {
     return FILTER_ORDER.every(type => {
@@ -52,16 +58,19 @@ function getFilteredVariants(variants) {
   });
 }
 
+// доступные значения для одного типа опции
 function getAvailableOptions(type, variants) {
   const filteredVariants = getFilteredVariants(variants);
   const options = [...new Set(filteredVariants.map(v => v[type]).filter(Boolean))];
   return options.sort();
 }
 
+// все ли опции выбраны
 function isCompleteSelection() {
   return FILTER_ORDER.every(type => selectedOption[type]);
 }
 
+// индекс секции, до которой выбор сделан
 function getCurrentSectionIndex() {
   for (let i = 0; i < FILTER_ORDER.length; i++) {
     if (!selectedOption[FILTER_ORDER[i]]) return i;
@@ -69,12 +78,14 @@ function getCurrentSectionIndex() {
   return FILTER_ORDER.length;
 }
 
+// список товаров для отображения в магазине
 function getVisibleProducts() {
   if (!productsData) return [];
   let base = selectedCategory === 'Все'
     ? productsData.filter(p => randomIds.indexOf(p.id) !== -1)
     : productsData.filter(p => p.cat === selectedCategory);
 
+  // сгруппировать по имени (оставляем самое дешевое как «главную» карточку)
   const grouped = {};
   base.forEach(p => {
     if (!grouped[p.name] || p.price < grouped[p.name].price) grouped[p.name] = p;
@@ -90,6 +101,7 @@ function getVisibleProducts() {
   return Object.values(grouped);
 }
 
+// выбор случайных id для главной выдачи
 function pickRandomIds(items, count) {
   const ids = items.map(x => x.id);
   for (let i = ids.length - 1; i > 0; i--) {
@@ -101,6 +113,7 @@ function pickRandomIds(items, count) {
   return ids.slice(0, Math.min(count, ids.length));
 }
 
+// предзагрузка картинок
 function preloadAllImages(products) {
   products.forEach(product => {
     const variants = getProductVariants(product.name);
@@ -116,12 +129,13 @@ function preloadAllImages(products) {
   });
 }
 
+// подписи к опциям
 function getLabel(type) {
   const labels = { simType: 'SIM/eSIM', storage: 'Память', color: 'Цвет', region: 'Регион' };
   return labels[type] || type;
 }
 
-// Рендер магазина
+// рендер магазина
 function renderShop() {
   if (!productsData || productsData.length === 0) {
     root.innerHTML = '<div class="text-center p-20 text-gray-500">Нет товаров</div>';
@@ -168,6 +182,7 @@ function renderShop() {
   setupImageCarousels();
 }
 
+// карточка товара
 function productCard(product) {
   const variants = getProductVariants(product.name);
   const allImages = getFilteredProductImages(variants);
@@ -212,6 +227,7 @@ function productCard(product) {
   );
 }
 
+// навешивание обработчиков
 function setupHandlers() {
   const categoryEl = document.getElementById('category');
   const searchEl = document.getElementById('search');
@@ -254,7 +270,7 @@ function setupHandlers() {
   });
 }
 
-// Карусели на карточках
+// карусели на карточках
 function setupImageCarousels() {
   document.querySelectorAll('.image-carousel-inner[data-carousel]').forEach(inner => {
     const dots = inner.parentElement.querySelectorAll('.dot');
