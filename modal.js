@@ -55,6 +55,15 @@ function clearOptionNoFocus(type) {
 window.selectOptionNoFocus = selectOptionNoFocus;
 window.clearOptionNoFocus = clearOptionNoFocus;
 
+window.changeQuantity = function(delta) {
+  let q = selectedQuantity + delta;
+  if (q < 1) q = 1;
+  if (q > 100) q = 100;
+  selectedQuantity = q;
+  const span = document.getElementById('quantityValue');
+  if (span) span.textContent = selectedQuantity;
+};
+
 window.addToCartFromModal = function() {
   if (!isCompleteSelection()) {
     tg?.showAlert?.('❌ Выберите все опции: SIM → Память → Цвет → Регион');
@@ -64,7 +73,7 @@ window.addToCartFromModal = function() {
   const allVariants = getFilteredVariants(
     getProductVariants(currentProduct.name).filter(v => v.inStock)
   );
-  const variants = allVariants; // уже только ✅
+  const variants = allVariants; // только ✅
 
   if (variants.length === 0) {
     tg?.showAlert?.('❌ Нет доступных вариантов');
@@ -72,7 +81,6 @@ window.addToCartFromModal = function() {
   }
 
   const selectedVariant = variants[0];
-
   addToCart(selectedVariant, selectedQuantity);
   tg?.showAlert?.(
     '✅ ' + selectedVariant.name + '\n' +
@@ -85,21 +93,10 @@ window.addToCartFromModal = function() {
   closeModal();
 };
 
-window.changeQuantity = function(delta) {
-  let q = selectedQuantity + delta;
-  if (q < 1) q = 1;
-  if (q > 100) q = 100;
-  selectedQuantity = q;
-  const span = document.getElementById('quantityValue');
-  if (span) span.textContent = selectedQuantity;
-};
-
 function renderProductModal(product) {
   currentProduct = product;
 
-  // все варианты товара
   const allVariants = getProductVariants(product.name);
-  // только доступные варианты (✅)
   const variants = allVariants.filter(v => v.inStock);
 
   if (variants.length === 0) {
@@ -128,14 +125,12 @@ function renderProductModal(product) {
   });
 
   const complete = isCompleteSelection();
-  const availableVariants = filteredVariants; // здесь уже только inStock
+  const availableVariants = filteredVariants;
 
-  // минимальная цена по текущему фильтру
   const currentMinPrice = availableVariants.length
     ? Math.min.apply(null, availableVariants.map(v => v.price))
     : Math.min.apply(null, variants.map(v => v.price));
 
-  // текст вверху слева
   let headerPriceText;
   if (!complete) {
     headerPriceText = 'от $' + currentMinPrice;
@@ -211,6 +206,9 @@ function renderProductModal(product) {
                 )
             ) +
           '</div>' +
+          '<p class="px-2 text-xs text-gray-500 mb-2">' +
+            'Чтобы посмотреть реальные фото товара, выберите все параметры устройства.' +
+          '</p>' +
         '</div>' +
 
         '<div class="p-6 space-y-4">' +
@@ -252,7 +250,6 @@ function renderProductModal(product) {
             );
           }).join('') +
 
-          // Количество
           '<div class="quantity-section">' +
             '<label class="text-sm font-semibold text-gray-700 mb-2 block">Количество</label>' +
             '<div class="flex items-center gap-3">' +

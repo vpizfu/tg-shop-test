@@ -214,11 +214,12 @@ function productCard(product) {
   const cheapestVariant = variants.reduce((min, p) => (p.price < min.price ? p : min), variants[0]);
   const carouselId = 'carousel_' + Math.random().toString(36).substr(2, 9);
 
+  // убрал hover-scale, чтобы не было "моргания" при переключении табов
   return (
-    '<div class="bg-white rounded-2xl p-4 shadow-lg hover:shadow-2xl transition-all group cursor-pointer relative"' +
+    '<div class="bg-white rounded-2xl p-4 shadow-lg group cursor-pointer relative"' +
       ' data-product-name="' + escapeHtml(product.name) + '"' +
       ' data-carousel-id="' + carouselId + '">' +
-      '<div class="w-full h-32 rounded-xl mb-3 image-carousel h-32 group-hover:scale-105 transition-transform cursor-pointer">' +
+      '<div class="w-full h-32 rounded-xl mb-3 image-carousel h-32 cursor-pointer">' +
         '<div class="image-carousel-inner" data-carousel="' + carouselId + '" data-current="0">' +
           images.map((img, idx) =>
             '<img src="' + img + '" class="carousel-img' + (idx === 0 ? ' loaded' : '') +

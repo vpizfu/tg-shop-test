@@ -19,7 +19,16 @@ let selectedCategory = 'Все',
 
 let cartItems = [];        // {id,name,price,storage,color,region,quantity,available}
 let savedAddresses = [];   // [string]
-let previousOrders = [];   // {id,date,items,total,address}
+let previousOrders = [];   // {id,date,items,subtotal,commission,total,address,paymentType,pickupMode,pickupLocation}
+
+let paymentType = 'cash';  // 'cash' | 'card'
+let pickupMode = false;    // false = доставка, true = самовывоз
+let pickupLocation = '';
+
+const PICKUP_LOCATIONS = [
+  'ТЦ Галерея, пр-т Победителей, 9',
+  'ТРЦ Dana Mall, ул. Петра Мстиславца, 11'
+];
 
 const root = document.getElementById('root');
 const modal = document.getElementById('productModal');
@@ -112,7 +121,7 @@ function initTabBar() {
 }
 
 function switchTab(tabName) {
-  if (currentTab === tabName) return; // уже эта вкладка
+  if (currentTab === tabName) return;
 
   currentTab = tabName;
   document.querySelectorAll('#tabBar .tab-item').forEach(t => t.classList.remove('active'));
@@ -132,7 +141,7 @@ function switchTab(tabName) {
   }
 }
 
-// ---------- Корзина ----------
+// ---------- Корзина и синхронизация ----------
 
 function updateCartBadge() {
   const badge = document.getElementById('cartBadge');
@@ -147,17 +156,30 @@ function updateCartBadge() {
 }
 
 function addToCart(variant, quantity) {
-  const existing = cartItems.find(item => item.id === variant.id);
+  // перед добавлением заново валидируем по productsData
+  if (!productsData) {
+    tg?.showAlert?.('Товары ещё не загружены, попробуйте позже');
+    return;
+  }
+  const freshVariant = productsData.find(p => p.id === variant.id && p.inStock);
+  if (!freshVariant) {
+    // перестраиваем shop и cart
+    syncProductsAndCart();
+    tg?.showAlert?.('Этот вариант больше недоступен');
+    return;
+  }
+
+  const existing = cartItems.find(item => item.id === freshVariant.id);
   if (existing) {
     existing.quantity = Math.min(existing.quantity + quantity, 100);
   } else {
     cartItems.push({
-      id: variant.id,
-      name: variant.name,
-      price: variant.price,
-      storage: variant.storage,
-      color: variant.color,
-      region: variant.region,
+      id: freshVariant.id,
+      name: freshVariant.name,
+      price: freshVariant.price,
+      storage: freshVariant.storage,
+      color: freshVariant.color,
+      region: freshVariant.region,
       quantity: quantity,
       available: true
     });
@@ -199,7 +221,28 @@ function syncCartWithProducts() {
   updateCartBadge();
 }
 
+function syncProductsAndCart() {
+  // пересчитываем productsData (она уже актуальна после fetchAndUpdateProducts)
+  syncCartWithProducts();
+  if (currentTab === 'shop') renderShop();
+  if (currentTab === 'cart') showCartTab();
+}
+
 // ---------- Вкладка корзины ----------
+
+window.setPaymentType = function(type) {
+  paymentType = type;
+  showCartTab();
+};
+
+window.setPickupMode = function(mode) {
+  pickupMode = !!mode;
+  showCartTab();
+};
+
+window.setPickupLocation = function(addr) {
+  pickupLocation = addr;
+};
 
 function showCartTab() {
   if (!cartItems.length) {
@@ -217,12 +260,14 @@ function showCartTab() {
     return;
   }
 
-  const total = cartItems.reduce((sum, item) =>
+  const subtotal = cartItems.reduce((sum, item) =>
     sum + (item.price * item.quantity), 0
   );
+  const commission = paymentType === 'card' ? Math.round(subtotal * 0.15) : 0;
+  const total = subtotal + commission;
 
   root.innerHTML =
-    '<div class="p-6 space-y-6">' +
+    '<div class="p-6 space-y-6 pb-28">' + // добавили нижний паддинг, чтобы кнопка не уезжала
       '<h2 class="text-2xl font-bold text-gray-800 mb-4">Корзина</h2>' +
       '<div class="space-y-3">' +
         cartItems.map((item, idx) =>
@@ -256,23 +301,87 @@ function showCartTab() {
       '</div>' +
 
       '<div class="pt-4 border-t space-y-4">' +
-        '<div class="flex items-center justify-between">' +
-          '<span class="text-lg font-semibold">Итого:</span>' +
-          '<span class="text-xl font-bold text-blue-600">$' + total + '</span>' +
+        '<div class="space-y-2">' +
+          '<h3 class="text-sm font-semibold text-gray-700">Способ оплаты</h3>' +
+          '<div class="flex flex-col gap-2">' +
+            '<label class="flex items-center gap-2 text-sm">' +
+              '<input type="radio" name="paymentType" value="cash"' +
+                     (paymentType === "cash" ? " checked" : "") +
+                     ' onchange="setPaymentType(\'cash\')">' +
+              '<span>Наличными (0%)</span>' +
+            '</label>' +
+            '<label class="flex items-center gap-2 text-sm">' +
+              '<input type="radio" name="paymentType" value="card"' +
+                     (paymentType === "card" ? " checked" : "") +
+                     ' onchange="setPaymentType(\'card\')">' +
+              '<span>Картой (+15%)</span>' +
+            '</label>' +
+          '</div>' +
         '</div>' +
 
-        '<div class="space-y-3">' +
-          '<label class="text-sm font-semibold text-gray-700 block">Адрес доставки</label>' +
-          '<select id="savedAddress" class="w-full bg-white border rounded-xl px-3 py-2 text-sm mb-2">' +
-            '<option value="">Выбрать сохранённый адрес</option>' +
-            (savedAddresses || []).map(addr =>
-              '<option value="' + escapeHtml(addr) + '">' + escapeHtml(addr) + '</option>'
-            ).join('') +
-          '</select>' +
-          '<textarea id="deliveryAddress" class="w-full bg-white border rounded-xl px-3 py-2 text-sm"' +
-                    ' rows="3" placeholder="Введите адрес доставки..."></textarea>' +
+        '<div class="space-y-2">' +
+          '<h3 class="text-sm font-semibold text-gray-700">Способ получения</h3>' +
+          '<div class="flex flex-col gap-2 mb-2">' +
+            '<label class="flex items-center gap-2 text-sm">' +
+              '<input type="radio" name="pickupMode" value="delivery"' +
+                     (!pickupMode ? " checked" : "") +
+                     ' onchange="setPickupMode(false)">' +
+              '<span>Доставка</span>' +
+            '</label>' +
+            '<label class="flex items-center gap-2 text-sm">' +
+              '<input type="radio" name="pickupMode" value="pickup"' +
+                     (pickupMode ? " checked" : "") +
+                     ' onchange="setPickupMode(true)">' +
+              '<span>Самовывоз</span>' +
+            '</label>' +
+          '</div>' +
+
+          (!pickupMode
+            ? (
+              '<label class="text-sm font-semibold text-gray-700 block">Адрес доставки</label>' +
+              '<select id="savedAddress" class="w-full bg-white border rounded-xl px-3 py-2 text-sm mb-2">' +
+                '<option value="">Выбрать сохранённый адрес</option>' +
+                (savedAddresses || []).map(addr =>
+                  '<option value="' + escapeHtml(addr) + '">' + escapeHtml(addr) + '</option>'
+                ).join('') +
+              '</select>' +
+              '<textarea id="deliveryAddress" class="w-full bg-white border rounded-xl px-3 py-2 text-sm"' +
+                        ' rows="3" placeholder="Введите адрес доставки..."></textarea>'
+            )
+            : (
+              '<label class="text-sm font-semibold text-gray-700 block">Адрес самовывоза</label>' +
+              '<select id="pickupLocation" class="w-full bg-white border rounded-xl px-3 py-2 text-sm mb-2"' +
+                      ' onchange="setPickupLocation(this.value)">' +
+                '<option value="">Выберите пункт самовывоза</option>' +
+                PICKUP_LOCATIONS.map(addr =>
+                  '<option value="' + escapeHtml(addr) + '"' +
+                    (pickupLocation === addr ? ' selected' : '') + '>' +
+                    escapeHtml(addr) +
+                  '</option>'
+                ).join('') +
+              '</select>'
+            )
+          ) +
         '</div>' +
 
+        '<div class="space-y-1 text-sm text-gray-700">' +
+          '<div class="flex items-center justify-between">' +
+            '<span>Сумма товаров</span>' +
+            '<span>$' + subtotal + '</span>' +
+          '</div>' +
+          '<div class="flex items-center justify-between">' +
+            '<span>Наценка за оплату картой</span>' +
+            '<span>' + (paymentType === "card" ? "+ $" + commission : "$0") + '</span>' +
+          '</div>' +
+          '<div class="flex items-center justify-between font-semibold mt-1">' +
+            '<span>Итого к оплате</span>' +
+            '<span>$' + total + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      // фиксированная кнопка внизу
+      '<div class="fixed left-0 right-0 bottom-0 px-6 pb-4 pt-3 bg-white border-t">' +
         '<button onclick="placeOrder()"' +
                 ' class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all"' +
                 (cartItems.some(i => !i.available) ? ' disabled style="opacity:0.5;cursor:not-allowed;"' : '') +
@@ -304,7 +413,18 @@ function showSaleTab() {
     '</div>';
 }
 
-// ---------- Вкладка профиль ----------
+// ---------- Профиль ----------
+
+window.toggleOrderDetails = function(index) {
+  const block = document.getElementById('orderDetails_' + index);
+  if (!block) return;
+  const isHidden = block.classList.contains('hidden');
+  if (isHidden) {
+    block.classList.remove('hidden');
+  } else {
+    block.classList.add('hidden');
+  }
+};
 
 function showProfileTab() {
   const user = tg?.initDataUnsafe?.user;
@@ -315,15 +435,33 @@ function showProfileTab() {
   const displayId = '@' + username + (fullName ? ' (' + fullName + ')' : '');
 
   const ordersHtml = previousOrders.length
-    ? previousOrders.map(o =>
-        '<div class="p-3 border rounded-xl mb-2">' +
-          '<div class="flex items-center justify_between mb-1">' +
+    ? previousOrders.map((o, idx) =>
+        '<div class="p-3 border rounded-xl mb-2 cursor-pointer" onclick="toggleOrderDetails(' + idx + ')">' +
+          '<div class="flex items-center justify-between mb-1">' +
             '<span class="text-sm font-semibold">Заказ #' + o.id + '</span>' +
-            '<span class="text-xs text-gray-500">' + new Date(o.date).toLocaleString() + '</span>' +
+            '<span class="text-sm font-bold text-blue-600">$' + o.total + '</span>' +
           '</div>' +
+          '<div class="text-xs text-gray-500 mb-1">' + new Date(o.date).toLocaleString() + '</div>' +
           '<div class="text-xs text-gray-600 mb-1">Адрес: ' + escapeHtml(o.address) + '</div>' +
           '<div class="text-xs text-gray-600 mb-1">Товаров: ' + o.items.length + '</div>' +
-          '<div class="text-sm font-bold text-blue-600">Сумма: $' + o.total + '</div>' +
+          '<div id="orderDetails_' + idx + '" class="hidden mt-2 text-xs text-gray-700 bg-gray-50 rounded-lg p-2">' +
+            o.items.map(item =>
+              '<div class="flex items-center justify-between mb-1">' +
+                '<div>' +
+                  '<div class="font-semibold">' + escapeHtml(item.name) + '</div>' +
+                  '<div class="text-[11px] text-gray-500">' +
+                    escapeHtml(item.storage) + ' | ' +
+                    escapeHtml(item.color) + ' | ' +
+                    escapeHtml(item.region) +
+                  '</div>' +
+                '</div>' +
+                '<div class="text-right text-[11px]">' +
+                  '<div>' + item.quantity + ' шт.</div>' +
+                  '<div>$' + (item.price * item.quantity) + '</div>' +
+                '</div>' +
+              '</div>'
+            ).join('') +
+          '</div>' +
         '</div>'
       ).join('')
     : '<p class="text-sm text-gray-500">Заказов пока нет</p>';
@@ -339,8 +477,8 @@ function showProfileTab() {
 
   root.innerHTML =
     '<div class="p-6 space-y-6">' +
-      '<div class="flex items_center space-x-4">' +
-        '<div class="w-16 h-16 bg-gradient_to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">' +
+      '<div class="flex items-center space-x-4">' +
+        '<div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">' +
           '<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
             '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
                   ' d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>' +
@@ -466,33 +604,66 @@ window.placeOrder = function() {
     tg?.showAlert?.('Корзина пуста');
     return;
   }
-  if (cartItems.some(i => !i.available)) {
-    tg?.showAlert?.('Удалите недоступные товары из корзины');
+
+  if (!productsData) {
+    tg?.showAlert?.('Товары ещё не загружены, попробуйте позже');
     return;
   }
 
-  const select = document.getElementById('savedAddress');
-  const textarea = document.getElementById('deliveryAddress');
-  let address = (textarea && textarea.value.trim()) || '';
-  if (!address && select && select.value) {
-    address = select.value;
-  }
+  // доппроверка наличия
+  let hasUnavailable = false;
+  cartItems = cartItems.map(item => {
+    const exists = productsData.some(p => p.id === item.id && p.inStock);
+    if (!exists) hasUnavailable = true;
+    return { ...item, available: exists };
+  });
+  saveCartToStorage();
+  updateCartBadge();
 
-  if (!address) {
-    tg?.showAlert?.('Введите или выберите адрес доставки');
+  if (hasUnavailable) {
+    showCartTab();
+    tg?.showAlert?.('Некоторые товары стали недоступны. Удалите их из корзины.');
     return;
   }
 
-  const total = cartItems.reduce((sum, item) =>
+  // выбор адреса / самовывоза
+  let address = '';
+  if (pickupMode) {
+    if (!pickupLocation) {
+      tg?.showAlert?.('Выберите пункт самовывоза');
+      return;
+    }
+    address = 'Самовывоз: ' + pickupLocation;
+  } else {
+    const select = document.getElementById('savedAddress');
+    const textarea = document.getElementById('deliveryAddress');
+    address = (textarea && textarea.value.trim()) || '';
+    if (!address && select && select.value) {
+      address = select.value;
+    }
+    if (!address) {
+      tg?.showAlert?.('Введите или выберите адрес доставки');
+      return;
+    }
+  }
+
+  const subtotal = cartItems.reduce((sum, item) =>
     sum + item.price * item.quantity, 0
   );
+  const commission = paymentType === 'card' ? Math.round(subtotal * 0.15) : 0;
+  const total = subtotal + commission;
 
   const order = {
     id: Date.now(),
     date: new Date().toISOString(),
     items: cartItems.slice(),
+    subtotal,
+    commission,
     total,
-    address
+    address,
+    paymentType,
+    pickupMode,
+    pickupLocation: pickupMode ? pickupLocation : ''
   };
 
   previousOrders.push(order);
@@ -553,13 +724,7 @@ async function fetchAndUpdateProducts(showLoader = false) {
         randomIds = pickRandomIds(productsData, Math.min(20, productsData.length));
       }
 
-      syncCartWithProducts();
-
-      if (currentTab === 'shop') {
-        renderShop();
-      } else if (currentTab === 'cart') {
-        showCartTab();
-      }
+      syncProductsAndCart();
     }
   } catch (error) {
     console.error('API error:', error);
