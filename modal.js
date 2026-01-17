@@ -1,5 +1,3 @@
-let fullscreenImages = [];
-let fullscreenCurrentIndex = 0;
 let modalCurrentIndex = 0;
 let modalImageCount = 0;
 let modalImageIndexBeforeFullscreen = 0;
@@ -95,7 +93,6 @@ function renderProductModal(product) {
 
   const complete = isCompleteSelection();
 
-  // только варианты с ✅
   const availableVariants = filteredVariants.filter(v => v.inStock);
   const filteredImages = complete ? getFilteredProductImages(availableVariants) : [];
 
@@ -121,12 +118,7 @@ function renderProductModal(product) {
 
       '<div class="flex-1 overflow-y-auto">' +
         '<div class="modal-image-section">' +
-          '<div class="w-full h-64 image-carousel h-64 rounded-xl overflow-hidden cursor-pointer mb-6"' +
-               ' id="modalCarousel"' +
-               (complete && filteredImages.length > 0
-                 ? ' onclick="openFullscreenModal()"' :
-                 ' style="cursor: default;"') +
-               '>' +
+          '<div class="w-full h-64 image-carousel h-64 rounded-xl overflow-hidden mb-6" id="modalCarousel">' +
             (complete && filteredImages.length > 0
               ? '<div class="image-carousel-inner" id="modalCarouselInner">' +
                   filteredImages.slice(0, 10).map(img =>
@@ -234,61 +226,6 @@ function renderProductModal(product) {
     initModalCarousel(filteredImages.length);
   }
 }
-
-// Fullscreen (только из модалки)
-function openFullscreen(images, startIndex) {
-  if (!images || images.length === 0) return;
-  fullscreenImages = images;
-  fullscreenCurrentIndex = startIndex || 0;
-  updateFullscreenCarousel();
-  fullscreenModal.classList.add('active');
-  document.body.style.overflow = 'hidden';
-  tg?.expand();
-}
-
-window.openFullscreenModal = function() {
-  const imgs = Array.from(document.querySelectorAll('#modalCarouselInner .carousel-img'))
-    .map(img => img.src);
-  openFullscreen(imgs, modalCurrentIndex);
-};
-
-function updateFullscreenCarousel() {
-  const container = document.getElementById('fullscreenCarousel');
-  container.innerHTML =
-    '<div class="flex items-center justify-center w-full h-full">' +
-      '<img src="' + fullscreenImages[fullscreenCurrentIndex] + '"' +
-           ' class="carousel-img loaded"' +
-           ' alt="Fullscreen image ' + (fullscreenCurrentIndex + 1) + '"' +
-           ' loading="lazy" />' +
-    '</div>';
-
-  const prevBtn = document.getElementById('fsPrev');
-  const nextBtn = document.getElementById('fsNext');
-  const hasMany = fullscreenImages.length > 1;
-  prevBtn.style.display = hasMany ? 'flex' : 'none';
-  nextBtn.style.display = hasMany ? 'flex' : 'none';
-}
-
-window.fullscreenNext = function() {
-  if (fullscreenImages.length <= 1) return;
-  fullscreenCurrentIndex = (fullscreenCurrentIndex + 1) % fullscreenImages.length;
-  updateFullscreenCarousel();
-  tg?.HapticFeedback?.selectionChanged();
-};
-
-window.fullscreenPrev = function() {
-  if (fullscreenImages.length <= 1) return;
-  fullscreenCurrentIndex = fullscreenCurrentIndex === 0
-    ? fullscreenImages.length - 1
-    : fullscreenCurrentIndex - 1;
-  updateFullscreenCarousel();
-  tg?.HapticFeedback?.selectionChanged();
-};
-
-window.closeFullscreen = function() {
-  fullscreenModal.classList.remove('active');
-  document.body.style.overflow = '';
-};
 
 // Модальная карусель
 function initModalCarousel(imageCount) {
