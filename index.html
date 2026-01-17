@@ -16,32 +16,37 @@
   <div id="tabBar">
     <a href="#" class="tab-item active" data-tab="shop">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 2.5M7 13l-1.5 2.5m12.5-2.5L21 13m0 0l-1.5 2.5m1.5-2.5L21 21"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 2.5M7 13l-1.5 2.5m12.5-2.5L21 13m0 0l-1.5 2.5m1.5-2.5L21 21"/>
       </svg>
       <span>Магазин</span>
     </a>
     <a href="#" class="tab-item" data-tab="sale" id="saleTab">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
       <span>Распродажа</span>
     </a>
     <a href="#" class="tab-item" data-tab="cart" id="cartTab">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 2.5M7 13l-1.5 2.5m12.5-2.5L21 13m0 0l-1.5 2.5m1.5-2.5L21 21"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 2.5M7 13l-1.5 2.5m12.5-2.5L21 13m0 0l-1.5 2.5m1.5-2.5L21 21"/>
       </svg>
       <span>Корзина</span>
       <div class="cart-badge" id="cartBadge" style="display: none;">0</div>
     </a>
     <a href="#" class="tab-item" data-tab="profile">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
       </svg>
       <span>Профиль</span>
     </a>
     <a href="#" class="tab-item" data-tab="about">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
       </svg>
       <span>О нас</span>
     </a>
@@ -49,15 +54,15 @@
   
   <!-- Продуктовая модалка -->
   <div id="productModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div id="modalContent" class="bg-white rounded-3xl shadow-2xl max-h-[90vh] w-full max-w-md overflow-hidden"></div>
+    <div id="modalContent" class="bg-white rounded-3xl shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col"></div>
   </div>
 
   <!-- Fullscreen модалка для картинок -->
   <div id="fullscreenModal">
     <div style="position: relative; width: 100%; height: 100%;">
       <div id="fullscreenCarousel"></div>
-      <button class="fullscreen-nav fullscreen-prev" onclick="fullscreenPrev()">‹</button>
-      <button class="fullscreen-nav fullscreen-next" onclick="fullscreenNext()">›</button>
+      <button id="fsPrev" class="fullscreen-nav fullscreen-prev" onclick="fullscreenPrev()">‹</button>
+      <button id="fsNext" class="fullscreen-nav fullscreen-next" onclick="fullscreenNext()">›</button>
       <button class="fullscreen-close" onclick="closeFullscreen()">×</button>
     </div>
   </div>
@@ -111,7 +116,7 @@
       lastTouchEnd = now;
     }, { passive: false });
 
-    // Инициализация таббара
+    // Таббар
     function initTabBar() {
       document.querySelectorAll('#tabBar .tab-item').forEach(tab => {
         tab.onclick = (e) => {
@@ -162,7 +167,8 @@
         <div class="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
           <div class="w-24 h-24 bg-blue-100 rounded-3xl flex items-center justify-center mb-6">
             <svg class="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z"/>
             </svg>
           </div>
           <h2 class="text-2xl font-bold text-gray-800 mb-4">Корзина</h2>
@@ -184,7 +190,8 @@
         <div class="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">
           <div class="w-24 h-24 bg-orange-100 rounded-3xl flex items-center justify-center mb-6">
             <svg class="w-16 h-16 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
           <h2 class="text-2xl font-bold text-gray-800 mb-4">Распродажа</h2>
@@ -202,7 +209,8 @@
           <div class="flex items-center space-x-4">
             <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">
               <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
               </svg>
             </div>
             <div>
@@ -213,14 +221,17 @@
           <div class="space-y-3">
             <button class="w-full bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-3 px-4 rounded-xl transition-all flex items-center">
               <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
               </svg>
               Настройки
             </button>
             <button class="w-full bg-red-100 hover:bg-red-200 text-red-800 font-bold py-3 px-4 rounded-xl transition-all flex items-center">
               <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"/>
               </svg>
               Выйти
             </button>
@@ -304,7 +315,7 @@
         `;
 
         const response = await fetch(API_URL);
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
 
         const products = await response.json();
         if (!Array.isArray(products) || products.length === 0) {
@@ -343,7 +354,8 @@
         <div class="flex flex-col items-center justify-center min-h-screen text-center p-8">
           <div class="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mb-6">
             <svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
             </svg>
           </div>
           <h2 class="text-2xl font-bold text-gray-800 mb-4">Ошибка загрузки</h2>
@@ -354,7 +366,7 @@
           </button>
         </div>
       `;
-      tg?.showAlert?.(`❌ ${message}`);
+      tg?.showAlert?.('❌ ' + message);
     }
 
     function getLabel(type) {
@@ -385,7 +397,8 @@
               <label class="text-xs text-gray-500 block mb-1">Поиск</label>
               <div class="flex items-center">
                 <svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"/>
                 </svg>
                 <input id="search" value="${escapeHtml(query)}" placeholder="Поиск..." class="w-full bg-transparent outline-none text-sm text-gray-900" />
               </div>
@@ -455,10 +468,10 @@
       tg?.HapticFeedback?.impactOccurred('light');
     }
 
+    // Карусели на карточках
     function setupImageCarousels() {
-      document.querySelectorAll('.image-carousel[data-carousel]').forEach(carousel => {
-        const inner = carousel.querySelector('.image-carousel-inner');
-        const dots = carousel.querySelectorAll('.dot');
+      document.querySelectorAll('.image-carousel-inner[data-carousel]').forEach(inner => {
+        const dots = inner.parentElement.querySelectorAll('.dot');
         const carouselId = inner.dataset.carousel;
         let currentIndex = 0;
 
@@ -486,7 +499,8 @@
         };
 
         dots.forEach((dot, idx) => {
-          dot.onclick = () => {
+          dot.onclick = (e) => {
+            e.stopPropagation();
             currentIndex = idx;
             updateCarousel();
             tg?.HapticFeedback?.selectionChanged();
@@ -497,12 +511,12 @@
       });
     }
 
-    window.carouselNext = id => window[`carouselNext_${id}`]?.();
-    window.carouselPrev = id => window[`carouselPrev_${id}`]?.();
-    window.carouselGoTo = (id, index) => window[`carouselGoTo_${id}`]?.(index);
+    window.carouselNext   = id => window[`carouselNext_${id}`]?.();
+    window.carouselPrev   = id => window[`carouselPrev_${id}`]?.();
+    window.carouselGoTo   = (id, index) => window[`carouselGoTo_${id}`]?.(index);
 
     function openProductFullscreen(carouselId) {
-      const carousel = document.querySelector(`[data-carousel="${carouselId}"] .image-carousel-inner`);
+      const carousel = document.querySelector(`[data-carousel="${carouselId}"]`);
       if (!carousel) return;
       const images = Array.from(carousel.querySelectorAll('.carousel-img')).map(img => img.src);
       openFullscreen(images, 0);
@@ -579,13 +593,14 @@
       modalImageIndexBeforeFullscreen = modalCurrentIndex; // Сохраняем текущий индекс
 
       document.getElementById('modalContent').innerHTML = `
-        <div class="flex flex-col h-full max-h-[90vh]">
+        <div class="flex flex-col h-full">
           <div class="p-6 pb-4 border-b border-gray-200">
             <div class="flex items-center justify-between mb-2">
               <h2 class="text-2xl font-bold">${escapeHtml(product.name)}</h2>
               <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-xl">
                 <svg class="w-6 h-6 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12"/>
                 </svg>
               </button>
             </div>
@@ -626,7 +641,7 @@
             </div>
           </div>
 
-          <div class="p-6 space-y-4 overflow-y-auto max-h-80">
+          <div class="p-6 space-y-4 overflow-y-auto">
             ${FILTER_ORDER.map((type, index) => {
               const isLocked = index > getCurrentSectionIndex();
               return `
@@ -675,7 +690,7 @@
       }
     }
 
-    // Fullscreen функции - УЛУЧШЕННЫЕ
+    // Fullscreen
     function openFullscreen(images, startIndex = 0) {
       if (!images || images.length === 0) return;
       fullscreenImages = images;
@@ -688,27 +703,35 @@
 
     window.openFullscreenModal = () => {
       const images = Array.from(document.querySelectorAll('#modalCarouselInner .carousel-img')).map(img => img.src);
-      openFullscreen(images, modalCurrentIndex); // Открываем с текущим индексом модалки
+      openFullscreen(images, modalCurrentIndex);
     };
 
     function updateFullscreenCarousel() {
       const container = document.getElementById('fullscreenCarousel');
       container.innerHTML = `
-        <div class="flex items-center justify-center w-full h-full" style="transform: translateX(-${fullscreenCurrentIndex * 100}%)">
-          ${fullscreenImages.map((img, idx) => 
-            `<img src="${img}" class="carousel-img ${idx === fullscreenCurrentIndex ? 'loaded' : ''}" alt="Fullscreen image ${idx + 1}" loading="lazy" />`
-          ).join('')}
+        <div class="flex items-center justify-center w-full h-full">
+          <img src="${fullscreenImages[fullscreenCurrentIndex]}" 
+               class="carousel-img loaded" 
+               alt="Fullscreen image ${fullscreenCurrentIndex + 1}" 
+               loading="lazy" />
         </div>
       `;
+      const prevBtn = document.getElementById('fsPrev');
+      const nextBtn = document.getElementById('fsNext');
+      const hasMany = fullscreenImages.length > 1;
+      prevBtn.style.display = hasMany ? 'flex' : 'none';
+      nextBtn.style.display = hasMany ? 'flex' : 'none';
     }
 
     window.fullscreenNext = () => {
+      if (fullscreenImages.length <= 1) return;
       fullscreenCurrentIndex = (fullscreenCurrentIndex + 1) % fullscreenImages.length;
       updateFullscreenCarousel();
       tg?.HapticFeedback?.selectionChanged();
     };
 
     window.fullscreenPrev = () => {
+      if (fullscreenImages.length <= 1) return;
       fullscreenCurrentIndex = fullscreenCurrentIndex === 0 ? fullscreenImages.length - 1 : fullscreenCurrentIndex - 1;
       updateFullscreenCarousel();
       tg?.HapticFeedback?.selectionChanged();
@@ -717,7 +740,6 @@
     window.closeFullscreen = () => {
       fullscreenModal.classList.remove('active');
       document.body.style.overflow = '';
-      // НЕ восстанавливаем модалку автоматически - остается на текущем фото
     };
 
     // Модальная карусель
@@ -841,7 +863,7 @@
       if (e.target === fullscreenModal) closeFullscreen();
     });
 
-    // Кнопка ESC
+    // ESC
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         if (fullscreenModal.classList.contains('active')) {
