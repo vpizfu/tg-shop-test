@@ -232,7 +232,7 @@ async function initApp() {
       '<div class="w-20 h-20 border-4 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-4"></div>' +
       '<div class="text-lg font-semibold text-gray-700 mb-2">Загрузка товаров...</div>' +
     '</div>';
-
+ 
   try {
     const response = await fetch(API_URL);
     if (!response.ok) throw new Error('HTTP ' + response.status);
