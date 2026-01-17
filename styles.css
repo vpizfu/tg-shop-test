@@ -311,3 +311,13 @@ img,
 .main-content {
   padding-bottom: 100px;
 }
+
+/* Чтобы середина модалки могла скроллиться */
+#modalContent {
+  min-height: 0;
+}
+
+#modalContent .flex-1 {
+  min-height: 0;
+}
+
