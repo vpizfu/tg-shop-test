@@ -145,8 +145,8 @@ img,
 
 /* Бекдроп модалки товара */
 #productModal {
-  padding-top: 8px;     /* меньше сверху */
-  padding-bottom: 16px; /* как было снизу */
+  padding-top: 1px;     /* меньше сверху */
+  padding-bottom: 36px; /* как было снизу */
   /* справа и слева останутся по умолчанию (0), если их не задавать отдельно */
 }
 
@@ -346,6 +346,6 @@ img,
 
 /* Отступ под таббар */
 .main-content {
-  padding-bottom: 16px;
+  padding-bottom: calc(var(--tabbar-height) + 16px);
   padding-top: 8px;
 }
