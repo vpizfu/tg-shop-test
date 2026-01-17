@@ -2,6 +2,19 @@ let modalCurrentIndex = 0;
 let modalImageCount = 0;
 let modalImageIndexBeforeFullscreen = 0;
 
+function getVariantCountText(count) {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+
+  if (mod10 === 1 && mod100 !== 11) {
+    return count + ' вариант';
+  }
+  if (mod10 >= 2 && mod10 <= 4 && !(mod100 >= 12 && mod100 <= 14)) {
+    return count + ' варианта';
+  }
+  return count + ' вариантов';
+}
+
 function selectOptionNoFocus(type, option) {
   if (document.activeElement && document.activeElement.blur) {
     document.activeElement.blur();
@@ -73,7 +86,7 @@ window.addToCartFromModal = function() {
   const allVariants = getFilteredVariants(
     getProductVariants(currentProduct.name).filter(v => v.inStock)
   );
-  const variants = allVariants; // только ✅
+  const variants = allVariants;
 
   if (variants.length === 0) {
     tg?.showAlert?.('❌ Нет доступных вариантов');
@@ -132,13 +145,18 @@ function renderProductModal(product) {
     : Math.min.apply(null, variants.map(v => v.price));
 
   let headerPriceText;
+  let headerSuffix = '';
+
   if (!complete) {
     headerPriceText = 'от $' + currentMinPrice;
+    headerSuffix = ' ед.';
   } else if (complete && availableVariants.length > 0) {
     const priceToShow = availableVariants[0].price;
     headerPriceText = '$' + priceToShow;
+    headerSuffix = 'за ед';
   } else {
     headerPriceText = 'Нет вариантов';
+    headerSuffix = '';
   }
 
   let filteredImages = [];
@@ -166,8 +184,8 @@ function renderProductModal(product) {
           '</button>' +
         '</div>' +
         '<div class="flex items-center gap-2 text-sm text-gray-500">' +
-          '<span>' + headerPriceText + '</span>' +
-          '<span>• ' + availableVariants.length + ' вариантов</span>' +
+          '<span>' + headerPriceText + (headerSuffix ? ' ' + headerSuffix : '') + '</span>' +
+          '<span>• ' + getVariantCountText(availableVariants.length) + '</span>' +
         '</div>' +
       '</div>' +
 
@@ -206,8 +224,8 @@ function renderProductModal(product) {
                 )
             ) +
           '</div>' +
-          '<p class="px-2 text-xs text-gray-500 mb-2">' +
-            'Чтобы посмотреть реальные фото товара, выберите все параметры устройства.' +
+          '<p class="px-2 text-xs text-gray-500 mb-2 text-center">' +
+            '❓ Чтобы посмотреть реальные фото товара, выберите все параметры устройства.' +
           '</p>' +
         '</div>' +
 
@@ -263,10 +281,10 @@ function renderProductModal(product) {
           '</div>' +
 
           '<div class="pt-4 border-t">' +
-            '<div class="text-center text-sm text-gray-500 mb-4">' +
+            '<div class="text-center text-sm text-gray-500 mb-3">' +
               'Доступно: <span id="variantCount" class="font-bold text-blue-600">' +
-                availableVariants.length +
-              '</span> вариантов' +
+                getVariantCountText(availableVariants.length) +
+              '</span>' +
               (complete && availableVariants.length === 1
                 ? '<div class="text-xs mt-1 bg-blue-50 border border-blue-200 rounded-xl p-2">' +
                     '✅ Выбран: ' + availableVariants[0].storage + ' | ' +
@@ -290,7 +308,10 @@ function renderProductModal(product) {
                 (complete && availableVariants.length > 0 ? '' : ' disabled') +
                 '>' +
           (complete && availableVariants.length > 0
-            ? '✅ В корзину $' + (availableVariants[0] && availableVariants[0].price ? availableVariants[0].price : '')
+            ? '✅ В корзину $' +
+                (availableVariants[0] && availableVariants[0].price
+                  ? (availableVariants[0].price * selectedQuantity)
+                  : '')
             : 'Выберите все опции') +
         '</button>' +
       '</div>' +

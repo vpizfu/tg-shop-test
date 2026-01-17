@@ -7,21 +7,25 @@
   <title>Магазин Техники</title>
   <script src="https://telegram.org/js/telegram-web-app.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" href="styles.css?v=1" />
+  <link rel="stylesheet" href="styles.css?v=2" />
 </head>
 
 <body class="bg-gray-100 min-h-screen">
-  <div id="root" class="main-content p-4 max-w-md mx-auto"></div>
+  <div id="root" class="main-content max-w-md mx-auto"></div>
 
   <!-- Таббар -->
   <div id="tabBar">
+    <!-- Магазин -->
     <a href="#" class="tab-item active" data-tab="shop">
+      <!-- другая иконка магазина -->
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 2.5M7 13l-1.5 2.5m12.5-2.5L21 13m0 0l-1.5 2.5m1.5-2.5L21 21"/>
+              d="M3 7h18M5 7l1 12h12l1-12M9 7V5a3 3 0 016 0v2" />
       </svg>
       <span>Магазин</span>
     </a>
+
+    <!-- Распродажа -->
     <a href="#" class="tab-item" data-tab="sale" id="saleTab">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -29,7 +33,10 @@
       </svg>
       <span>Распродажа</span>
     </a>
+
+    <!-- Корзина -->
     <a href="#" class="tab-item" data-tab="cart" id="cartTab">
+      <!-- оставим текущую иконку корзины, чтобы отличалась от магазина -->
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.5 2.5M7 13l-1.5 2.5m12.5-2.5L21 13m0 0l-1.5 2.5m1.5-2.5L21 21"/>
@@ -37,6 +44,8 @@
       <span>Корзина</span>
       <div class="cart-badge" id="cartBadge" style="display: none;">0</div>
     </a>
+
+    <!-- Профиль -->
     <a href="#" class="tab-item" data-tab="profile">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -44,6 +53,8 @@
       </svg>
       <span>Профиль</span>
     </a>
+
+    <!-- О нас -->
     <a href="#" class="tab-item" data-tab="about">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -54,14 +65,14 @@
   </div>
 
   <!-- Продуктовая модалка -->
-<div id="productModal"
-     class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
-  <div id="modalContent"
-       class="bg-white rounded-3xl shadow-2xl w-full max-w-md h-[85vh] flex flex-col overflow-hidden"></div>
-</div>
+  <div id="productModal"
+       class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center">
+    <div id="modalContent"
+         class="bg-white rounded-3xl shadow-2xl w-full max-w-md h-[85vh] flex flex-col overflow-hidden"></div>
+  </div>
 
-  <script src="products.js?v=5"></script>
-  <script src="modal.js?v=5"></script>
-  <script src="app.js?v=5"></script>
+  <script src="products.js?v=6"></script>
+  <script src="modals.js?v=6"></script>
+  <script src="apps.js?v=6"></script>
 </body>
 </html>

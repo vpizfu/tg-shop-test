@@ -82,14 +82,12 @@ function getCurrentSectionIndex() {
 function getVisibleProducts() {
   if (!productsData) return [];
 
-  // сгруппировать по имени
   const groupedByName = {};
   productsData.forEach(p => {
     if (!groupedByName[p.name]) groupedByName[p.name] = [];
     groupedByName[p.name].push(p);
   });
 
-  // оставить только те товары, у которых есть хотя бы один inStock-вариант
   const groupedVisible = Object.values(groupedByName)
     .filter(arr => arr.some(v => v.inStock))
     .map(arr => {
@@ -160,35 +158,37 @@ function renderShop() {
   const showCount = Math.min(loadedCount, list.length);
 
   root.innerHTML =
-    '<div class="mb-5">' +
-      '<h1 class="text-3xl font-bold text-center mb-4">🛒 Магазин</h1>' +
-      '<div class="flex items-center gap-3">' +
-        '<div class="flex-1 bg-white rounded-2xl shadow px-3 py-2">' +
-          '<label class="text-xs text-gray-500 block mb-1">Категория</label>' +
-          '<select id="category" class="w-full bg-transparent border-none font-semibold text-base focus:outline-none appearance-none">' +
-            CATEGORIES.map(c => (
-              '<option value="' + c + '"' + (c === selectedCategory ? ' selected' : '') + '>' + c + '</option>'
-            )).join('') +
-          '</select>' +
-        '</div>' +
-        '<div class="w-44 bg-white rounded-2xl shadow px-3 py-2">' +
-          '<label class="text-xs text-gray-500 block mb-1">Поиск</label>' +
-          '<div class="flex items-center">' +
-            '<svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
-              '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
-                    ' d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"/>' +
-            '</svg>' +
-            '<input id="search" value="' + escapeHtml(query) + '" placeholder="Поиск..."' +
-                   ' class="w-full bg-transparent outline-none text-sm text-gray-900" />' +
+    '<div class="pb-[65px]">' +
+      '<div class="mb-5">' +
+        '<h1 class="text-3xl font-bold text-center mb-4">🛒 Магазин</h1>' +
+        '<div class="flex items-center gap-3">' +
+          '<div class="flex-1 bg-white rounded-2xl shadow px-3 py-2">' +
+            '<label class="text-xs text-gray-500 block mb-1">Категория</label>' +
+            '<select id="category" class="w-full bg-transparent border-none font-semibold text-base focus:outline-none appearance-none">' +
+              CATEGORIES.map(c => (
+                '<option value="' + c + '"' + (c === selectedCategory ? ' selected' : '') + '>' + c + '</option>'
+              )).join('') +
+            '</select>' +
+          '</div>' +
+          '<div class="w-44 bg-white rounded-2xl shadow px-3 py-2">' +
+            '<label class="text-xs text-gray-500 block mb-1">Поиск</label>' +
+            '<div class="flex items-center">' +
+              '<svg class="w-4 h-4 text-gray-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
+                '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
+                      ' d="M21 21l-4.35-4.35M10 18a8 8 0 100-16 8 8 0 000 16z"/>' +
+              '</svg>' +
+              '<input id="search" value="' + escapeHtml(query) + '" placeholder="Поиск..."' +
+                     ' class="w-full bg-transparent outline-none text-sm text-gray-900" />' +
+            '</div>' +
           '</div>' +
         '</div>' +
+        '<div class="mt-3 text-xs text-gray-500">' +
+          'Показано: <span class="font-semibold">' + showCount + '</span> из ' + list.length +
+        '</div>' +
       '</div>' +
-      '<div class="mt-3 text-xs text-gray-500">' +
-        'Показано: <span class="font-semibold">' + showCount + '</span> из ' + list.length +
+      '<div class="product-grid" id="productGrid">' +
+        list.slice(0, showCount).map(productCard).join('') +
       '</div>' +
-    '</div>' +
-    '<div class="product-grid" id="productGrid">' +
-      list.slice(0, showCount).map(productCard).join('') +
     '</div>';
 
   setupHandlers();
@@ -202,41 +202,24 @@ function productCard(product) {
   const variants = allVariants.filter(v => v.inStock);
   if (variants.length === 0) return '';
 
-  const allImages = getFilteredProductImages(variants);
-
-  const commonImage = variants[0]?.commonImage || product.commonImage || '';
+  // используем только commonImage (из продукта), без вариативных картинок
+  const commonImage = product.commonImage || variants[0]?.commonImage || '';
   const fallbackByCategory = PLACEHOLDERS[product.cat] || PLACEHOLDERS['iPhone'];
 
-  const images = allImages.length > 0
-    ? allImages.slice(0, 3)
-    : [commonImage || fallbackByCategory];
+  const mainImage = commonImage || fallbackByCategory;
+  const images = [mainImage];
 
   const cheapestVariant = variants.reduce((min, p) => (p.price < min.price ? p : min), variants[0]);
   const carouselId = 'carousel_' + Math.random().toString(36).substr(2, 9);
 
-  // убрал hover-scale, чтобы не было "моргания" при переключении табов
   return (
     '<div class="bg-white rounded-2xl p-4 shadow-lg group cursor-pointer relative"' +
       ' data-product-name="' + escapeHtml(product.name) + '"' +
       ' data-carousel-id="' + carouselId + '">' +
       '<div class="w-full h-32 rounded-xl mb-3 image-carousel h-32 cursor-pointer">' +
         '<div class="image-carousel-inner" data-carousel="' + carouselId + '" data-current="0">' +
-          images.map((img, idx) =>
-            '<img src="' + img + '" class="carousel-img' + (idx === 0 ? ' loaded' : '') +
-            '" alt="Product ' + (idx + 1) + '" />'
-          ).join('') +
+          '<img src="' + mainImage + '" class="carousel-img loaded" alt="Product" />' +
         '</div>' +
-        (images.length > 1
-          ? '<button class="nav-btn nav-prev" onclick="carouselPrev(\'' + carouselId + '\'); event.stopPropagation()">‹</button>' +
-            '<button class="nav-btn nav-next" onclick="carouselNext(\'' + carouselId + '\'); event.stopPropagation()">›</button>' +
-            '<div class="carousel-dots">' +
-              images.map((_, idx) =>
-                '<div class="dot' + (idx === 0 ? ' active' : '') +
-                '" onclick="carouselGoTo(\'' + carouselId + '\',' + idx + '); event.stopPropagation()"></div>'
-              ).join('') +
-            '</div>'
-          : ''
-        ) +
       '</div>' +
       '<div class="font-bold text-base mb-1 truncate">' + escapeHtml(product.name) + '</div>' +
       '<div class="text-blue-600 font-black text-xl mb-1">$' + cheapestVariant.price + '</div>' +
@@ -289,7 +272,7 @@ function setupHandlers() {
   });
 }
 
-// карусели на карточках
+// карусели на карточках (сейчас без стрелок/точек, но оставим для совместимости)
 function setupImageCarousels() {
   document.querySelectorAll('.image-carousel-inner[data-carousel]').forEach(inner => {
     const dots = inner.parentElement.querySelectorAll('.dot');

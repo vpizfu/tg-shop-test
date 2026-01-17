@@ -123,6 +123,11 @@ function initTabBar() {
 function switchTab(tabName) {
   if (currentTab === tabName) return;
 
+  // закрыть модалку при переключении вкладки
+  if (typeof closeModal === 'function' && !modal.classList.contains('hidden')) {
+    closeModal();
+  }
+
   currentTab = tabName;
   document.querySelectorAll('#tabBar .tab-item').forEach(t => t.classList.remove('active'));
   const currentEl = document.querySelector('[data-tab="' + tabName + '"]');
@@ -156,14 +161,12 @@ function updateCartBadge() {
 }
 
 function addToCart(variant, quantity) {
-  // перед добавлением заново валидируем по productsData
   if (!productsData) {
     tg?.showAlert?.('Товары ещё не загружены, попробуйте позже');
     return;
   }
   const freshVariant = productsData.find(p => p.id === variant.id && p.inStock);
   if (!freshVariant) {
-    // перестраиваем shop и cart
     syncProductsAndCart();
     tg?.showAlert?.('Этот вариант больше недоступен');
     return;
@@ -222,7 +225,6 @@ function syncCartWithProducts() {
 }
 
 function syncProductsAndCart() {
-  // пересчитываем productsData (она уже актуальна после fetchAndUpdateProducts)
   syncCartWithProducts();
   if (currentTab === 'shop') renderShop();
   if (currentTab === 'cart') showCartTab();
@@ -247,7 +249,7 @@ window.setPickupLocation = function(addr) {
 function showCartTab() {
   if (!cartItems.length) {
     root.innerHTML =
-      '<div class="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">' +
+      '<div class="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 pb-[65px]">' +
         '<div class="w-24 h-24 bg-blue-100 rounded-3xl flex items-center justify-center mb-6">' +
           '<svg class="w-16 h-16 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
             '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
@@ -267,7 +269,7 @@ function showCartTab() {
   const total = subtotal + commission;
 
   root.innerHTML =
-    '<div class="p-6 space-y-6 pb-28">' + // добавили нижний паддинг, чтобы кнопка не уезжала
+    '<div class="relative min-h-[100vh] p-6 space-y-6 pb-[65px]">' +
       '<h2 class="text-2xl font-bold text-gray-800 mb-4">Корзина</h2>' +
       '<div class="space-y-3">' +
         cartItems.map((item, idx) =>
@@ -380,7 +382,6 @@ function showCartTab() {
         '</div>' +
       '</div>' +
 
-      // фиксированная кнопка внизу
       '<div class="fixed left-0 right-0 bottom-0 px-6 pb-4 pt-3 bg-white border-t">' +
         '<button onclick="placeOrder()"' +
                 ' class="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-2xl shadow-lg transition-all"' +
@@ -398,7 +399,7 @@ function showCartTab() {
 
 function showSaleTab() {
   root.innerHTML =
-    '<div class="flex flex-col items-center justify-center min-h-[60vh] text-center p-8">' +
+    '<div class="flex flex-col items-center justify-center min-h-[60vh] text-center p-8 pb-[65px]">' +
       '<div class="w-24 h-24 bg-orange-100 rounded-3xl flex items-center justify-center mb-6">' +
         '<svg class="w-16 h-16 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
           '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
@@ -429,10 +430,7 @@ window.toggleOrderDetails = function(index) {
 function showProfileTab() {
   const user = tg?.initDataUnsafe?.user;
   const username = user?.username || 'неизвестно';
-  const firstName = user?.first_name || '';
-  const lastName = user?.last_name || '';
-  const fullName = (firstName + ' ' + lastName).trim();
-  const displayId = '@' + username + (fullName ? ' (' + fullName + ')' : '');
+  const displayId = '@' + username;
 
   const ordersHtml = previousOrders.length
     ? previousOrders.map((o, idx) =>
@@ -476,7 +474,7 @@ function showProfileTab() {
     : '<p class="text-sm text-gray-500">Сохранённых адресов нет</p>';
 
   root.innerHTML =
-    '<div class="p-6 space-y-6">' +
+    '<div class="p-6 space-y-6 pb-[65px]">' +
       '<div class="flex items-center space-x-4">' +
         '<div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center">' +
           '<svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
@@ -485,7 +483,7 @@ function showProfileTab() {
           '</svg>' +
         '</div>' +
         '<div>' +
-          '<h2 class="text-xl font-bold">Пользователь</h2>' +
+          '<h2 class="text-xl font-bold">Профиль</h2>' +
           '<p class="text-gray-500 text-sm">ID: ' + escapeHtml(displayId) + '</p>' +
         '</div>' +
       '</div>' +
@@ -533,7 +531,7 @@ window.removeAddress = function(index) {
 
 function showAboutTab() {
   root.innerHTML =
-    '<div class="p-6 space-y-6">' +
+    '<div class="p-6 space-y-6 pb-[65px]">' +
       '<h2 class="text-2xl font-bold text-gray-800 mb-4">О нас</h2>' +
       '<div class="space-y-4 text-gray-700">' +
         '<p>Магазин премиальной техники Apple с гарантией качества и лучшими ценами.</p>' +
@@ -555,7 +553,7 @@ function showAboutTab() {
 
 function showError(message) {
   root.innerHTML = '' +
-    '<div class="flex flex-col items-center justify-center min-h-screen text-center p-8">' +
+    '<div class="flex flex-col items-center justify-center min-h-screen text-center p-8 pb-[65px]">' +
       '<div class="w-20 h-20 bg-red-100 rounded-2xl flex items-center justify-center mb-6">' +
         '<svg class="w-12 h-12 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">' +
           '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"' +
@@ -610,7 +608,6 @@ window.placeOrder = function() {
     return;
   }
 
-  // доппроверка наличия
   let hasUnavailable = false;
   cartItems = cartItems.map(item => {
     const exists = productsData.some(p => p.id === item.id && p.inStock);
@@ -626,7 +623,6 @@ window.placeOrder = function() {
     return;
   }
 
-  // выбор адреса / самовывоза
   let address = '';
   if (pickupMode) {
     if (!pickupLocation) {
